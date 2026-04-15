@@ -2,7 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Trash2, Package2, Sparkles, Calendar, Tag } from "lucide-react";
+import { Search, Plus, Trash2, Package2, Sparkles, Calendar, Tag, LogOut } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +12,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/lib/supabase";
 
 type LipstickItem = {
   id: number;
@@ -40,6 +41,14 @@ const emptyForm: Omit<LipstickItem, "id"> = {
 };
 
 export default function LipstickCatalogApp() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [authMessage, setAuthMessage] = useState("");
+
   const [items, setItems] = useState<LipstickItem[]>([]);
   const [query, setQuery] = useState("");
   const [finishFilter, setFinishFilter] = useState("all");
@@ -48,8 +57,28 @@ export default function LipstickCatalogApp() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchLipsticks();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session ?? null);
+      setAuthLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (session) {
+      fetchLipsticks();
+    } else {
+      setItems([]);
+      setLoading(false);
+    }
+  }, [session]);
 
   async function fetchLipsticks() {
     setLoading(true);
@@ -83,13 +112,55 @@ export default function LipstickCatalogApp() {
     setLoading(false);
   }
 
+  async function handleAuth() {
+    setAuthMessage("");
+
+    if (!email.trim() || !password.trim()) {
+      setAuthMessage("Please enter both email and password.");
+      return;
+    }
+
+    if (authMode === "signup") {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) {
+        setAuthMessage(error.message);
+        return;
+      }
+
+      setAuthMessage("Account created. If email confirmation is enabled, check your inbox.");
+      return;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      setAuthMessage(error.message);
+      return;
+    }
+
+    setAuthMessage("Signed in.");
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+  }
+
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
       const text =
         `${item.brand} ${item.shade} ${item.type} ${item.finish} ${item.undertone} ${item.colorFamily} ${item.status} ${item.occasion} ${item.notes}`.toLowerCase();
+
       const matchesQuery = text.includes(query.toLowerCase());
       const matchesFinish = finishFilter === "all" || item.finish === finishFilter;
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+
       return matchesQuery && matchesFinish && matchesStatus;
     });
   }, [items, query, finishFilter, statusFilter]);
@@ -99,9 +170,11 @@ export default function LipstickCatalogApp() {
   };
 
   const addLipstick = async () => {
+    if (!session?.user?.id) return;
     if (!form.brand.trim() || !form.shade.trim()) return;
 
     const { error } = await supabase.from("lipsticks").insert({
+      user_id: session.user.id,
       brand: form.brand,
       shade: form.shade,
       type: form.type,
@@ -134,6 +207,67 @@ export default function LipstickCatalogApp() {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
+  if (authLoading) {
+    return <div className="p-8">Loading...</div>;
+  }
+
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-pink-50 p-4 md:p-8">
+        <div className="mx-auto max-w-md">
+          <Card className="rounded-3xl border shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-2xl">Sign in to My Lipstick Library</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="rounded-2xl"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Password</Label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  className="rounded-2xl"
+                />
+              </div>
+
+              {authMessage ? (
+                <p className="text-sm text-slate-600">{authMessage}</p>
+              ) : null}
+
+              <Button onClick={handleAuth} className="w-full rounded-2xl">
+                {authMode === "signin" ? "Sign In" : "Create Account"}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={() =>
+                  setAuthMode((prev) => (prev === "signin" ? "signup" : "signin"))
+                }
+                className="w-full rounded-2xl"
+              >
+                {authMode === "signin"
+                  ? "Need an account? Sign up"
+                  : "Already have an account? Sign in"}
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   const totalOwned = items.filter((x) => x.status === "Owned").length;
   const totalWishlist = items.filter((x) => x.status === "Wishlist").length;
 
@@ -150,13 +284,17 @@ export default function LipstickCatalogApp() {
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">My Lipstick Library</h1>
               <p className="mt-1 text-sm text-slate-600">
-                Track every lipstick you own, search shades quickly, and remember exactly what each one is.
+                Signed in as {session.user.email}
               </p>
             </div>
+
             <div className="flex flex-wrap gap-2">
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">Owned: {totalOwned}</Badge>
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">Wishlist: {totalWishlist}</Badge>
               <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">Total: {items.length}</Badge>
+              <Button variant="outline" className="rounded-2xl" onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" /> Sign Out
+              </Button>
             </div>
           </div>
 
