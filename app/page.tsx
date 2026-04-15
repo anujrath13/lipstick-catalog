@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Plus, Trash2, Package2, Sparkles, Calendar, Tag } from "lucide-react";
@@ -9,7 +11,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-const starterData = [
+type LipstickItem = {
+  id: number;
+  brand: string;
+  shade: string;
+  type: string;
+  finish: string;
+  undertone: string;
+  colorFamily: string;
+  status: string;
+  purchaseDate: string;
+  occasion: string;
+  notes: string;
+};
+
+const starterData: LipstickItem[] = [
   {
     id: 1,
     brand: "MAC",
@@ -51,7 +67,7 @@ const starterData = [
   },
 ];
 
-const emptyForm = {
+const emptyForm: Omit<LipstickItem, "id"> = {
   brand: "",
   shade: "",
   type: "Bullet",
@@ -65,15 +81,16 @@ const emptyForm = {
 };
 
 export default function LipstickCatalogApp() {
-  const [items, setItems] = useState(starterData);
+  const [items, setItems] = useState<LipstickItem[]>(starterData);
   const [query, setQuery] = useState("");
   const [finishFilter, setFinishFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<Omit<LipstickItem, "id">>(emptyForm);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      const text = `${item.brand} ${item.shade} ${item.type} ${item.finish} ${item.undertone} ${item.colorFamily} ${item.status} ${item.occasion} ${item.notes}`.toLowerCase();
+      const text =
+        `${item.brand} ${item.shade} ${item.type} ${item.finish} ${item.undertone} ${item.colorFamily} ${item.status} ${item.occasion} ${item.notes}`.toLowerCase();
       const matchesQuery = text.includes(query.toLowerCase());
       const matchesFinish = finishFilter === "all" || item.finish === finishFilter;
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
@@ -81,7 +98,7 @@ export default function LipstickCatalogApp() {
     });
   }, [items, query, finishFilter, statusFilter]);
 
-  const updateForm = (field, value) => {
+  const updateForm = (field: keyof Omit<LipstickItem, "id">, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -97,7 +114,7 @@ export default function LipstickCatalogApp() {
     setForm(emptyForm);
   };
 
-  const deleteLipstick = (id) => {
+  const deleteLipstick = (id: number) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
