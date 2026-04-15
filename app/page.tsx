@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Plus, Trash2, Package2, Sparkles, Calendar, Tag } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/lib/supabase";
 
 type LipstickItem = {
   id: number;
@@ -25,48 +26,6 @@ type LipstickItem = {
   notes: string;
 };
 
-const starterData: LipstickItem[] = [
-  {
-    id: 1,
-    brand: "MAC",
-    shade: "Ruby Woo",
-    type: "Bullet",
-    finish: "Matte",
-    undertone: "Cool",
-    colorFamily: "Red",
-    status: "Owned",
-    purchaseDate: "2025-01-10",
-    occasion: "Evening",
-    notes: "Classic bold red. Great for formal events.",
-  },
-  {
-    id: 2,
-    brand: "Maybelline",
-    shade: "Touch of Spice",
-    type: "Bullet",
-    finish: "Creamy Matte",
-    undertone: "Warm",
-    colorFamily: "Nude",
-    status: "Owned",
-    purchaseDate: "2024-11-03",
-    occasion: "Daily",
-    notes: "Easy everyday shade.",
-  },
-  {
-    id: 3,
-    brand: "Fenty Beauty",
-    shade: "Uncuffed",
-    type: "Liquid",
-    finish: "Soft Matte",
-    undertone: "Neutral",
-    colorFamily: "Pink",
-    status: "Wishlist",
-    purchaseDate: "",
-    occasion: "Anytime",
-    notes: "Looks like a wearable rosy nude.",
-  },
-];
-
 const emptyForm: Omit<LipstickItem, "id"> = {
   brand: "",
   shade: "",
@@ -81,11 +40,48 @@ const emptyForm: Omit<LipstickItem, "id"> = {
 };
 
 export default function LipstickCatalogApp() {
-  const [items, setItems] = useState<LipstickItem[]>(starterData);
+  const [items, setItems] = useState<LipstickItem[]>([]);
   const [query, setQuery] = useState("");
   const [finishFilter, setFinishFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [form, setForm] = useState<Omit<LipstickItem, "id">>(emptyForm);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLipsticks();
+  }, []);
+
+  async function fetchLipsticks() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("lipsticks")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error loading lipsticks:", error);
+      setLoading(false);
+      return;
+    }
+
+    const mapped: LipstickItem[] = (data ?? []).map((item) => ({
+      id: item.id,
+      brand: item.brand,
+      shade: item.shade,
+      type: item.type,
+      finish: item.finish,
+      undertone: item.undertone,
+      colorFamily: item.color_family,
+      status: item.status,
+      purchaseDate: item.purchase_date ?? "",
+      occasion: item.occasion,
+      notes: item.notes ?? "",
+    }));
+
+    setItems(mapped);
+    setLoading(false);
+  }
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -102,19 +98,39 @@ export default function LipstickCatalogApp() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const addLipstick = () => {
+  const addLipstick = async () => {
     if (!form.brand.trim() || !form.shade.trim()) return;
-    setItems((prev) => [
-      {
-        id: Date.now(),
-        ...form,
-      },
-      ...prev,
-    ]);
+
+    const { error } = await supabase.from("lipsticks").insert({
+      brand: form.brand,
+      shade: form.shade,
+      type: form.type,
+      finish: form.finish,
+      undertone: form.undertone,
+      color_family: form.colorFamily,
+      status: form.status,
+      purchase_date: form.purchaseDate || null,
+      occasion: form.occasion,
+      notes: form.notes,
+    });
+
+    if (error) {
+      console.error("Error saving lipstick:", error);
+      return;
+    }
+
     setForm(emptyForm);
+    fetchLipsticks();
   };
 
-  const deleteLipstick = (id: number) => {
+  const deleteLipstick = async (id: number) => {
+    const { error } = await supabase.from("lipsticks").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error deleting lipstick:", error);
+      return;
+    }
+
     setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -313,7 +329,11 @@ export default function LipstickCatalogApp() {
           </motion.div>
 
           <div className="space-y-4">
-            {filteredItems.length === 0 ? (
+            {loading ? (
+              <Card className="rounded-3xl border shadow-sm">
+                <CardContent className="p-5">Loading...</CardContent>
+              </Card>
+            ) : filteredItems.length === 0 ? (
               <Card className="rounded-3xl border shadow-sm">
                 <CardContent className="flex min-h-[240px] flex-col items-center justify-center gap-3 text-center">
                   <Package2 className="h-10 w-10 text-slate-400" />
