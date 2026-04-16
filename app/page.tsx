@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   Share2,
+  X,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -51,6 +52,12 @@ type ProfileRow = {
   email: string;
 };
 
+type ShareRow = {
+  id: number;
+  lipstick_id: number;
+  shared_with_user_id: string;
+};
+
 const emptyForm: Omit<LipstickItem, "id" | "ownerUserId"> = {
   brand: "",
   shade: "",
@@ -64,6 +71,8 @@ const emptyForm: Omit<LipstickItem, "id" | "ownerUserId"> = {
   notes: "",
 };
 
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+
 export default function LipstickCatalogApp() {
   const [session, setSession] = useState<Session | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -74,6 +83,7 @@ export default function LipstickCatalogApp() {
   const [authMessage, setAuthMessage] = useState("");
 
   const [items, setItems] = useState<LipstickItem[]>([]);
+  const [shareRows, setShareRows] = useState<ShareRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [query, setQuery] = useState("");
@@ -90,8 +100,11 @@ export default function LipstickCatalogApp() {
   );
 
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false);
   const [shareEmails, setShareEmails] = useState<Record<number, string>>({});
   const [shareMessages, setShareMessages] = useState<Record<number, string>>({});
+
+  const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -111,10 +124,59 @@ export default function LipstickCatalogApp() {
   useEffect(() => {
     if (session) {
       fetchLipsticks();
+      fetchShareRows();
     } else {
       setItems([]);
+      setShareRows([]);
       setLoading(false);
     }
+  }, [session]);
+
+  useEffect(() => {
+    if (!session) {
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+        inactivityTimeoutRef.current = null;
+      }
+      return;
+    }
+
+    const resetInactivityTimer = () => {
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+      }
+
+      inactivityTimeoutRef.current = setTimeout(async () => {
+        await supabase.auth.signOut();
+        setAuthMessage("You were logged out after 10 minutes of inactivity.");
+      }, INACTIVITY_TIMEOUT_MS);
+    };
+
+    const activityEvents: Array<keyof WindowEventMap> = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "scroll",
+      "touchstart",
+      "click",
+    ];
+
+    activityEvents.forEach((eventName) => {
+      window.addEventListener(eventName, resetInactivityTimer, { passive: true });
+    });
+
+    resetInactivityTimer();
+
+    return () => {
+      if (inactivityTimeoutRef.current) {
+        clearTimeout(inactivityTimeoutRef.current);
+        inactivityTimeoutRef.current = null;
+      }
+
+      activityEvents.forEach((eventName) => {
+        window.removeEventListener(eventName, resetInactivityTimer);
+      });
+    };
   }, [session]);
 
   const toggleExpanded = (id: number) => {
@@ -185,6 +247,21 @@ export default function LipstickCatalogApp() {
     setLoading(false);
   }
 
+  async function fetchShareRows() {
+    if (!session?.user?.id) return;
+
+    const { data, error } = await supabase
+      .from("lipstick_shares")
+      .select("id, lipstick_id, shared_with_user_id");
+
+    if (error) {
+      console.error("Error loading share rows:", error);
+      return;
+    }
+
+    setShareRows(data ?? []);
+  }
+
   async function handleAuth() {
     setAuthMessage("");
 
@@ -234,6 +311,10 @@ export default function LipstickCatalogApp() {
   }
 
   async function handleSignOut() {
+    if (inactivityTimeoutRef.current) {
+      clearTimeout(inactivityTimeoutRef.current);
+      inactivityTimeoutRef.current = null;
+    }
     await supabase.auth.signOut();
   }
 
@@ -261,10 +342,11 @@ export default function LipstickCatalogApp() {
     }
 
     setForm(emptyForm);
+    setIsAddFormOpen(false);
     fetchLipsticks();
   };
 
-  const deleteLipstick = async (id: number) => {
+  const deleteOwnedLipstick = async (id: number) => {
     const { error } = await supabase.from("lipsticks").delete().eq("id", id);
 
     if (error) {
@@ -274,6 +356,35 @@ export default function LipstickCatalogApp() {
 
     setItems((prev) => prev.filter((item) => item.id !== id));
     setExpandedItems((prev) => prev.filter((itemId) => itemId !== id));
+  };
+
+  const removeSharedLipstick = async (lipstickId: number) => {
+    if (!session?.user?.id) return;
+
+    const matchingShare = shareRows.find(
+      (row) =>
+        row.lipstick_id === lipstickId &&
+        row.shared_with_user_id === session.user.id
+    );
+
+    if (!matchingShare) {
+      console.error("No share row found for this user and lipstick.");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("lipstick_shares")
+      .delete()
+      .eq("id", matchingShare.id);
+
+    if (error) {
+      console.error("Error removing shared lipstick:", error);
+      return;
+    }
+
+    setItems((prev) => prev.filter((item) => item.id !== lipstickId));
+    setShareRows((prev) => prev.filter((row) => row.id !== matchingShare.id));
+    setExpandedItems((prev) => prev.filter((itemId) => itemId !== lipstickId));
   };
 
   const shareLipstick = async (lipstickId: number) => {
@@ -328,6 +439,8 @@ export default function LipstickCatalogApp() {
       ...prev,
       [lipstickId]: "",
     }));
+
+    fetchShareRows();
   };
 
   const filteredItems = useMemo(() => {
@@ -475,111 +588,114 @@ export default function LipstickCatalogApp() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="flex min-w-max gap-3 pb-2">
-              <div className="relative min-w-[260px]">
-                <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by brand, shade, color, notes..."
-                  className="rounded-2xl pl-9"
-                />
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by brand, shade, color, notes..."
+                className="rounded-2xl pl-9"
+              />
+            </div>
+
+            <div className="overflow-x-auto">
+              <div className="flex min-w-max gap-3 pb-2">
+                <Select value={typeFilter} onValueChange={setTypeFilter}>
+                  <SelectTrigger className="w-[160px] rounded-2xl">
+                    <SelectValue placeholder="Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    <SelectItem value="Bullet">Bullet</SelectItem>
+                    <SelectItem value="Liquid">Liquid</SelectItem>
+                    <SelectItem value="Tint">Tint</SelectItem>
+                    <SelectItem value="Gloss">Gloss</SelectItem>
+                    <SelectItem value="Balm">Balm</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={finishFilter} onValueChange={setFinishFilter}>
+                  <SelectTrigger className="w-[170px] rounded-2xl">
+                    <SelectValue placeholder="Finish" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All finishes</SelectItem>
+                    <SelectItem value="Matte">Matte</SelectItem>
+                    <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
+                    <SelectItem value="Soft Matte">Soft Matte</SelectItem>
+                    <SelectItem value="Satin">Satin</SelectItem>
+                    <SelectItem value="Glossy">Glossy</SelectItem>
+                    <SelectItem value="Sheer">Sheer</SelectItem>
+                    <SelectItem value="Tint">Tint</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
+                  <SelectTrigger className="w-[170px] rounded-2xl">
+                    <SelectValue placeholder="Undertone" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All undertones</SelectItem>
+                    <SelectItem value="Warm">Warm</SelectItem>
+                    <SelectItem value="Cool">Cool</SelectItem>
+                    <SelectItem value="Neutral">Neutral</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
+                  <SelectTrigger className="w-[180px] rounded-2xl">
+                    <SelectValue placeholder="Color family" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All color families</SelectItem>
+                    <SelectItem value="Red">Red</SelectItem>
+                    <SelectItem value="Pink">Pink</SelectItem>
+                    <SelectItem value="Berry">Berry</SelectItem>
+                    <SelectItem value="Brown">Brown</SelectItem>
+                    <SelectItem value="Nude">Nude</SelectItem>
+                    <SelectItem value="Coral">Coral</SelectItem>
+                    <SelectItem value="Mauve">Mauve</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-[170px] rounded-2xl">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="Owned">Owned</SelectItem>
+                    <SelectItem value="Wishlist">Wishlist</SelectItem>
+                    <SelectItem value="Decluttered">Decluttered</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={occasionFilter} onValueChange={setOccasionFilter}>
+                  <SelectTrigger className="w-[170px] rounded-2xl">
+                    <SelectValue placeholder="Best for" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All occasions</SelectItem>
+                    <SelectItem value="Daily">Daily</SelectItem>
+                    <SelectItem value="Office">Office</SelectItem>
+                    <SelectItem value="Evening">Evening</SelectItem>
+                    <SelectItem value="Party">Party</SelectItem>
+                    <SelectItem value="Anytime">Anytime</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+                  <SelectTrigger className="w-[190px] rounded-2xl">
+                    <SelectValue placeholder="Ownership" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All lipsticks</SelectItem>
+                    <SelectItem value="owned">Owned by you</SelectItem>
+                    <SelectItem value="shared">Shared with you</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-
-              <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[160px] rounded-2xl">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All types</SelectItem>
-                  <SelectItem value="Bullet">Bullet</SelectItem>
-                  <SelectItem value="Liquid">Liquid</SelectItem>
-                  <SelectItem value="Tint">Tint</SelectItem>
-                  <SelectItem value="Gloss">Gloss</SelectItem>
-                  <SelectItem value="Balm">Balm</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={finishFilter} onValueChange={setFinishFilter}>
-                <SelectTrigger className="w-[170px] rounded-2xl">
-                  <SelectValue placeholder="Finish" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All finishes</SelectItem>
-                  <SelectItem value="Matte">Matte</SelectItem>
-                  <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                  <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                  <SelectItem value="Satin">Satin</SelectItem>
-                  <SelectItem value="Glossy">Glossy</SelectItem>
-                  <SelectItem value="Sheer">Sheer</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
-                <SelectTrigger className="w-[170px] rounded-2xl">
-                  <SelectValue placeholder="Undertone" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All undertones</SelectItem>
-                  <SelectItem value="Warm">Warm</SelectItem>
-                  <SelectItem value="Cool">Cool</SelectItem>
-                  <SelectItem value="Neutral">Neutral</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
-                <SelectTrigger className="w-[180px] rounded-2xl">
-                  <SelectValue placeholder="Color family" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All color families</SelectItem>
-                  <SelectItem value="Red">Red</SelectItem>
-                  <SelectItem value="Pink">Pink</SelectItem>
-                  <SelectItem value="Berry">Berry</SelectItem>
-                  <SelectItem value="Brown">Brown</SelectItem>
-                  <SelectItem value="Nude">Nude</SelectItem>
-                  <SelectItem value="Coral">Coral</SelectItem>
-                  <SelectItem value="Mauve">Mauve</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[170px] rounded-2xl">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="Owned">Owned</SelectItem>
-                  <SelectItem value="Wishlist">Wishlist</SelectItem>
-                  <SelectItem value="Decluttered">Decluttered</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={occasionFilter} onValueChange={setOccasionFilter}>
-                <SelectTrigger className="w-[170px] rounded-2xl">
-                  <SelectValue placeholder="Best for" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All occasions</SelectItem>
-                  <SelectItem value="Daily">Daily</SelectItem>
-                  <SelectItem value="Office">Office</SelectItem>
-                  <SelectItem value="Evening">Evening</SelectItem>
-                  <SelectItem value="Party">Party</SelectItem>
-                  <SelectItem value="Anytime">Anytime</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-                <SelectTrigger className="w-[190px] rounded-2xl">
-                  <SelectValue placeholder="Ownership" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All lipsticks</SelectItem>
-                  <SelectItem value="owned">Owned by you</SelectItem>
-                  <SelectItem value="shared">Shared with you</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         </motion.div>
@@ -591,170 +707,184 @@ export default function LipstickCatalogApp() {
             transition={{ duration: 0.3 }}
           >
             <Card className="rounded-3xl border shadow-sm">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <Plus className="h-5 w-5" /> Add a Lipstick
+              <CardHeader
+                className="cursor-pointer"
+                onClick={() => setIsAddFormOpen((prev) => !prev)}
+              >
+                <CardTitle className="flex items-center justify-between text-xl">
+                  <span className="flex items-center gap-2">
+                    <Plus className="h-5 w-5" /> Add a Lipstick
+                  </span>
+                  {isAddFormOpen ? (
+                    <ChevronUp className="h-5 w-5" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5" />
+                  )}
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+
+              {isAddFormOpen ? (
+                <CardContent className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Brand</Label>
+                      <Input
+                        value={form.brand}
+                        onChange={(e) => updateForm("brand", e.target.value)}
+                        placeholder="e.g. MAC"
+                        className="rounded-2xl"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Shade</Label>
+                      <Input
+                        value={form.shade}
+                        onChange={(e) => updateForm("shade", e.target.value)}
+                        placeholder="e.g. Velvet Teddy"
+                        className="rounded-2xl"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Type</Label>
+                      <Select value={form.type} onValueChange={(v) => updateForm("type", v)}>
+                        <SelectTrigger className="rounded-2xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Bullet">Bullet</SelectItem>
+                          <SelectItem value="Liquid">Liquid</SelectItem>
+                          <SelectItem value="Tint">Tint</SelectItem>
+                          <SelectItem value="Gloss">Gloss</SelectItem>
+                          <SelectItem value="Balm">Balm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Finish</Label>
+                      <Select
+                        value={form.finish}
+                        onValueChange={(v) => updateForm("finish", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Matte">Matte</SelectItem>
+                          <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
+                          <SelectItem value="Soft Matte">Soft Matte</SelectItem>
+                          <SelectItem value="Satin">Satin</SelectItem>
+                          <SelectItem value="Glossy">Glossy</SelectItem>
+                          <SelectItem value="Sheer">Sheer</SelectItem>
+                          <SelectItem value="Tint">Tint</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Undertone</Label>
+                      <Select
+                        value={form.undertone}
+                        onValueChange={(v) => updateForm("undertone", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Warm">Warm</SelectItem>
+                          <SelectItem value="Cool">Cool</SelectItem>
+                          <SelectItem value="Neutral">Neutral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Color family</Label>
+                      <Select
+                        value={form.colorFamily}
+                        onValueChange={(v) => updateForm("colorFamily", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Red">Red</SelectItem>
+                          <SelectItem value="Pink">Pink</SelectItem>
+                          <SelectItem value="Berry">Berry</SelectItem>
+                          <SelectItem value="Brown">Brown</SelectItem>
+                          <SelectItem value="Nude">Nude</SelectItem>
+                          <SelectItem value="Coral">Coral</SelectItem>
+                          <SelectItem value="Mauve">Mauve</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        value={form.status}
+                        onValueChange={(v) => updateForm("status", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Owned">Owned</SelectItem>
+                          <SelectItem value="Wishlist">Wishlist</SelectItem>
+                          <SelectItem value="Decluttered">Decluttered</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Best for</Label>
+                      <Select
+                        value={form.occasion}
+                        onValueChange={(v) => updateForm("occasion", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Office">Office</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Party">Party</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
-                    <Label>Brand</Label>
+                    <Label>Purchase date</Label>
                     <Input
-                      value={form.brand}
-                      onChange={(e) => updateForm("brand", e.target.value)}
-                      placeholder="e.g. MAC"
+                      type="date"
+                      value={form.purchaseDate}
+                      onChange={(e) => updateForm("purchaseDate", e.target.value)}
                       className="rounded-2xl"
                     />
                   </div>
+
                   <div className="space-y-2">
-                    <Label>Shade</Label>
-                    <Input
-                      value={form.shade}
-                      onChange={(e) => updateForm("shade", e.target.value)}
-                      placeholder="e.g. Velvet Teddy"
-                      className="rounded-2xl"
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={form.notes}
+                      onChange={(e) => updateForm("notes", e.target.value)}
+                      placeholder="Add dupes, wear time, where you bought it, special memories, etc."
+                      className="min-h-[100px] rounded-2xl"
                     />
                   </div>
-                </div>
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Type</Label>
-                    <Select value={form.type} onValueChange={(v) => updateForm("type", v)}>
-                      <SelectTrigger className="rounded-2xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Bullet">Bullet</SelectItem>
-                        <SelectItem value="Liquid">Liquid</SelectItem>
-                        <SelectItem value="Tint">Tint</SelectItem>
-                        <SelectItem value="Gloss">Gloss</SelectItem>
-                        <SelectItem value="Balm">Balm</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Finish</Label>
-                    <Select
-                      value={form.finish}
-                      onValueChange={(v) => updateForm("finish", v)}
-                    >
-                      <SelectTrigger className="rounded-2xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Matte">Matte</SelectItem>
-                        <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                        <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                        <SelectItem value="Satin">Satin</SelectItem>
-                        <SelectItem value="Glossy">Glossy</SelectItem>
-                        <SelectItem value="Sheer">Sheer</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Undertone</Label>
-                    <Select
-                      value={form.undertone}
-                      onValueChange={(v) => updateForm("undertone", v)}
-                    >
-                      <SelectTrigger className="rounded-2xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Warm">Warm</SelectItem>
-                        <SelectItem value="Cool">Cool</SelectItem>
-                        <SelectItem value="Neutral">Neutral</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Color family</Label>
-                    <Select
-                      value={form.colorFamily}
-                      onValueChange={(v) => updateForm("colorFamily", v)}
-                    >
-                      <SelectTrigger className="rounded-2xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Red">Red</SelectItem>
-                        <SelectItem value="Pink">Pink</SelectItem>
-                        <SelectItem value="Berry">Berry</SelectItem>
-                        <SelectItem value="Brown">Brown</SelectItem>
-                        <SelectItem value="Nude">Nude</SelectItem>
-                        <SelectItem value="Coral">Coral</SelectItem>
-                        <SelectItem value="Mauve">Mauve</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select
-                      value={form.status}
-                      onValueChange={(v) => updateForm("status", v)}
-                    >
-                      <SelectTrigger className="rounded-2xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Owned">Owned</SelectItem>
-                        <SelectItem value="Wishlist">Wishlist</SelectItem>
-                        <SelectItem value="Decluttered">Decluttered</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Best for</Label>
-                    <Select
-                      value={form.occasion}
-                      onValueChange={(v) => updateForm("occasion", v)}
-                    >
-                      <SelectTrigger className="rounded-2xl">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Daily">Daily</SelectItem>
-                        <SelectItem value="Office">Office</SelectItem>
-                        <SelectItem value="Evening">Evening</SelectItem>
-                        <SelectItem value="Party">Party</SelectItem>
-                        <SelectItem value="Anytime">Anytime</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Purchase date</Label>
-                  <Input
-                    type="date"
-                    value={form.purchaseDate}
-                    onChange={(e) => updateForm("purchaseDate", e.target.value)}
-                    className="rounded-2xl"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Notes</Label>
-                  <Textarea
-                    value={form.notes}
-                    onChange={(e) => updateForm("notes", e.target.value)}
-                    placeholder="Add dupes, wear time, where you bought it, special memories, etc."
-                    className="min-h-[100px] rounded-2xl"
-                  />
-                </div>
-
-                <Button onClick={addLipstick} className="w-full rounded-2xl">
-                  <Plus className="mr-2 h-4 w-4" /> Save Lipstick
-                </Button>
-              </CardContent>
+                  <Button onClick={addLipstick} className="w-full rounded-2xl">
+                    <Plus className="mr-2 h-4 w-4" /> Save Lipstick
+                  </Button>
+                </CardContent>
+              ) : null}
             </Card>
           </motion.div>
 
@@ -811,12 +941,23 @@ export default function LipstickCatalogApp() {
                                 className="rounded-2xl"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteLipstick(item.id);
+                                  deleteOwnedLipstick(item.id);
                                 }}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                               </Button>
-                            ) : null}
+                            ) : (
+                              <Button
+                                variant="outline"
+                                className="rounded-2xl"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeSharedLipstick(item.id);
+                                }}
+                              >
+                                <X className="mr-2 h-4 w-4" /> Remove
+                              </Button>
+                            )}
 
                             <Button
                               variant="ghost"
