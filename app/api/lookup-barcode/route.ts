@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 type UpcItemDbItem = {
   title?: string;
@@ -13,16 +19,19 @@ function normalizeString(value: unknown) {
 
 function inferType(text: string) {
   const t = text.toLowerCase();
+
   if (t.includes("liquid")) return "Liquid";
   if (t.includes("gloss")) return "Gloss";
   if (t.includes("tint")) return "Tint";
   if (t.includes("balm")) return "Balm";
   if (t.includes("lipstick")) return "Bullet";
+
   return "";
 }
 
 function inferFinish(text: string) {
   const t = text.toLowerCase();
+
   if (t.includes("creamy matte")) return "Creamy Matte";
   if (t.includes("soft matte")) return "Soft Matte";
   if (t.includes("matte")) return "Matte";
@@ -30,6 +39,7 @@ function inferFinish(text: string) {
   if (t.includes("gloss")) return "Glossy";
   if (t.includes("sheer")) return "Sheer";
   if (t.includes("tint")) return "Tint";
+
   return "";
 }
 
@@ -45,6 +55,36 @@ export async function POST(req: Request) {
       );
     }
 
+    // 1. Check Supabase first
+    const { data: existing, error: existingError } = await supabase
+      .from("lipsticks")
+      .select("*")
+      .eq("barcode", barcode)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingError) {
+      console.error("Supabase barcode lookup error:", existingError);
+    }
+
+    if (existing) {
+      return NextResponse.json({
+        result: {
+          barcode,
+          brand: existing.brand || "",
+          shade: existing.shade || "",
+          type: existing.type || "",
+          finish: existing.finish || "",
+          undertone: existing.undertone || "",
+          colorFamily: existing.color_family || "",
+          status: existing.status || "Owned",
+          occasion: existing.occasion || "",
+          notes: existing.notes || `Barcode: ${barcode}`,
+        },
+      });
+    }
+
+    // 2. Fallback to UPCitemdb
     const url = `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(
       barcode
     )}`;
@@ -102,7 +142,9 @@ export async function POST(req: Request) {
     const category = normalizeString(item.category);
     const description = normalizeString(item.description);
 
-    const combinedText = [title, category, description].filter(Boolean).join(" ");
+    const combinedText = [title, category, description]
+      .filter(Boolean)
+      .join(" ");
 
     let shade = "";
     if (brand && title.toLowerCase().startsWith(brand.toLowerCase())) {

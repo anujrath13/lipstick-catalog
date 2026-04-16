@@ -58,6 +58,7 @@ type LipstickItem = {
   notes: string;
   favorite: boolean;
   deletedAt: string | null;
+  barcode: string;
 };
 
 type ProfileRow = {
@@ -82,6 +83,7 @@ type LipstickFormValues = {
   purchaseDate: string;
   occasion: string;
   notes: string;
+  barcode: string;
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
@@ -100,6 +102,7 @@ const emptyForm: LipstickFormValues = {
   purchaseDate: "",
   occasion: "",
   notes: "",
+  barcode: "",
 };
 
 const colorFamilyMap: Record<
@@ -236,7 +239,14 @@ export default function LipstickCatalogApp() {
             ? scanned.status
             : "Owned",
         occasion: typeof scanned.occasion === "string" ? scanned.occasion : "",
-        notes: typeof scanned.notes === "string" ? scanned.notes : `Barcode: ${barcode}`,
+        notes:
+          typeof scanned.notes === "string"
+            ? scanned.notes
+            : `Barcode: ${barcode}`,
+        barcode:
+          typeof scanned.barcode === "string"
+            ? scanned.barcode
+            : barcode,
       });
 
       showNotice("success", `Barcode scanned: ${barcode}`);
@@ -331,6 +341,7 @@ export default function LipstickCatalogApp() {
         status: normalizeScannedValue(scanned.status) || "Owned",
         occasion: normalizeScannedValue(scanned.occasion),
         notes: normalizeScannedValue(scanned.notes),
+        barcode: normalizeScannedValue(scanned.barcode),
       });
 
       showNotice("success", "Lipstick scanned. Review and save.");
@@ -523,6 +534,7 @@ export default function LipstickCatalogApp() {
       purchaseDate: item.purchaseDate,
       occasion: item.occasion,
       notes: item.notes,
+      barcode: item.barcode ?? "",
     });
     setEditingLipstickId(item.id);
     setIsAddFormOpen(true);
@@ -664,6 +676,7 @@ export default function LipstickCatalogApp() {
       notes: item.notes ?? "",
       favorite: item.favorite ?? false,
       deletedAt: item.deleted_at ?? null,
+      barcode: item.barcode ?? "",
     }));
 
     setItems(mapped);
@@ -803,6 +816,7 @@ export default function LipstickCatalogApp() {
       purchase_date: form.purchaseDate || todayString(),
       occasion: form.occasion,
       notes: form.notes.trim(),
+      barcode: form.barcode.trim() || null,
     };
 
     if (isEditing && editingLipstickId !== null) {
@@ -1258,8 +1272,8 @@ export default function LipstickCatalogApp() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
               className={`fixed left-1/2 top-4 z-50 w-[92%] max-w-md -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg ${notice.type === "success"
-                  ? "border-green-200 bg-white text-green-800"
-                  : "border-rose-200 bg-white text-rose-700"
+                ? "border-green-200 bg-white text-green-800"
+                : "border-rose-200 bg-white text-rose-700"
                 }`}
             >
               {notice.text}
@@ -2063,14 +2077,23 @@ export default function LipstickCatalogApp() {
                                     <Sparkles className="h-4 w-4" /> Best for:{" "}
                                     {item.occasion || "Not added"}
                                   </div>
+
                                   <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
                                     {item.purchaseDate || "No date added"}
                                   </div>
+
                                   <div className="flex items-center gap-2 sm:col-span-2">
                                     <Tag className="h-4 w-4" />
                                     {item.notes || "No notes added yet."}
                                   </div>
+
+                                  {item.barcode ? (
+                                    <div className="flex items-center gap-2 sm:col-span-2">
+                                      <Tag className="h-4 w-4" />
+                                      Barcode: {item.barcode}
+                                    </div>
+                                  ) : null}
                                 </div>
 
                                 <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
