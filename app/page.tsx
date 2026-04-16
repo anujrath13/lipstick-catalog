@@ -179,7 +179,6 @@ export default function LipstickCatalogApp() {
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
 
   const [isScanning, setIsScanning] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
@@ -190,86 +189,10 @@ export default function LipstickCatalogApp() {
     null
   );
 
-  const convertFileToDataUrl = (file: File) =>
-  new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-      } else {
-        reject(new Error("Could not read image file."));
-      }
-    };
-
-    reader.onerror = () => reject(new Error("Failed to read image file."));
-    reader.readAsDataURL(file);
-  });
-
-const normalizeScannedValue = (value: unknown) =>
-  typeof value === "string" ? value.trim() : "";
-
-const handleScanFileChange = async (
-  e: React.ChangeEvent<HTMLInputElement>
-) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
-
-  if (!file.type.startsWith("image/")) {
-    showNotice("error", "Please upload an image file.");
-    e.target.value = "";
-    return;
-  }
-
-  try {
-    setIsScanning(true);
-    setIsAddFormOpen(true);
-
-    const imageDataUrl = await convertFileToDataUrl(file);
-
-    const res = await fetch("/api/scan-lipstick", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ imageDataUrl }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      showNotice("error", data?.error || "Failed to scan lipstick.");
-      return;
-    }
-
-    const scanned = data?.result ?? {};
-
-    setForm((prev) => ({
-      ...prev,
-      brand: normalizeScannedValue(scanned.brand),
-      shade: normalizeScannedValue(scanned.shade),
-      type: normalizeScannedValue(scanned.type),
-      finish: normalizeScannedValue(scanned.finish),
-      undertone: normalizeScannedValue(scanned.undertone),
-      colorFamily: normalizeScannedValue(scanned.colorFamily),
-      status: normalizeScannedValue(scanned.status) || "Owned",
-      occasion: normalizeScannedValue(scanned.occasion),
-      notes: normalizeScannedValue(scanned.notes),
-    }));
-
-    showNotice("success", "Lipstick scanned. Review and save.");
-  } catch (error) {
-    console.error(error);
-    showNotice("error", "Could not scan this image.");
-  } finally {
-    setIsScanning(false);
-    e.target.value = "";
-  }
-};
-
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isEditing = editingLipstickId !== null;
 
@@ -277,6 +200,95 @@ const handleScanFileChange = async (
     setNotice({ type, text });
     if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     noticeTimeoutRef.current = setTimeout(() => setNotice(null), 3000);
+  };
+
+  const convertFileToDataUrl = (file: File) =>
+    new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          resolve(reader.result);
+        } else {
+          reject(new Error("Could not read image file."));
+        }
+      };
+
+      reader.onerror = () => reject(new Error("Failed to read image file."));
+      reader.readAsDataURL(file);
+    });
+
+  const normalizeScannedValue = (value: unknown) =>
+    typeof value === "string" ? value.trim() : "";
+
+  const updateForm = (field: keyof LipstickFormValues, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingLipstickId(null);
+  };
+
+  const handleScanFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      showNotice("error", "Please upload an image file.");
+      e.target.value = "";
+      return;
+    }
+
+    try {
+      setIsScanning(true);
+      resetForm();
+      setIsAddFormOpen(true);
+
+      const imageDataUrl = await convertFileToDataUrl(file);
+
+      const res = await fetch("/api/scan-lipstick", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ imageDataUrl }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showNotice("error", data?.error || "Failed to scan lipstick.");
+        return;
+      }
+
+      const scanned = data?.result ?? {};
+
+      setEditingLipstickId(null);
+
+      setForm({
+        ...emptyForm,
+        brand: normalizeScannedValue(scanned.brand),
+        shade: normalizeScannedValue(scanned.shade),
+        type: normalizeScannedValue(scanned.type),
+        finish: normalizeScannedValue(scanned.finish),
+        undertone: normalizeScannedValue(scanned.undertone),
+        colorFamily: normalizeScannedValue(scanned.colorFamily),
+        status: normalizeScannedValue(scanned.status) || "Owned",
+        occasion: normalizeScannedValue(scanned.occasion),
+        notes: normalizeScannedValue(scanned.notes),
+      });
+
+      showNotice("success", "Lipstick scanned. Review and save.");
+    } catch (error) {
+      console.error(error);
+      showNotice("error", "Could not scan this image.");
+    } finally {
+      setIsScanning(false);
+      e.target.value = "";
+    }
   };
 
   useEffect(() => {
@@ -420,10 +432,6 @@ const handleScanFileChange = async (
     );
   };
 
-  const updateForm = (field: keyof LipstickFormValues, value: string) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
-  };
-
   const clearFilters = (showToast = true) => {
     setQuery("");
     setTypeFilter("all");
@@ -441,11 +449,6 @@ const handleScanFileChange = async (
     }
   };
 
-  const resetForm = () => {
-    setForm(emptyForm);
-    setEditingLipstickId(null);
-  };
-
   const startAddLipstick = () => {
     resetForm();
     setIsAddFormOpen(true);
@@ -456,7 +459,7 @@ const handleScanFileChange = async (
     setIsAddFormOpen(false);
   };
 
-  const startEditLipstick = (item: LipstickItem) => {
+    const startEditLipstick = (item: LipstickItem) => {
     setForm({
       brand: item.brand,
       shade: item.shade,
@@ -483,8 +486,8 @@ const handleScanFileChange = async (
     await refreshDataOnly();
     showNotice("success", "Library refreshed.");
   };
-  
-    const exportVisibleItemsToCsv = () => {
+
+  const exportVisibleItemsToCsv = () => {
     if (visibleItems.length === 0) {
       showNotice("error", "No lipsticks to export.");
       return;
@@ -838,7 +841,7 @@ const handleScanFileChange = async (
     showNotice("success", "Lipstick restored.");
   };
 
-  const permanentlyDeleteLipstick = async (id: number) => {
+    const permanentlyDeleteLipstick = async (id: number) => {
     const confirmed = window.confirm(
       "This will permanently delete the lipstick. This cannot be undone. Continue?"
     );
@@ -1184,14 +1187,14 @@ const handleScanFileChange = async (
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-white px-3 py-4 sm:px-4 sm:py-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/*"
-    className="hidden"
-    onChange={handleScanFileChange}
-  />
-        <AnimatePresence>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleScanFileChange}
+        />
+                <AnimatePresence>
           {notice ? (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
@@ -1279,19 +1282,6 @@ const handleScanFileChange = async (
                     All
                   </Button>
                   <Button
-                  variant="outline"
-                  className="rounded-2xl border-rose-100"
-                  disabled={isScanning}
-                  onClick={() => fileInputRef.current?.click()}
-                  >
-                    {isScanning ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                    <Camera className="mr-2 h-4 w-4" />
-                    )}
-                    {isScanning ? "Scanning..." : "Scan Lipstick"}
-                    </Button>
-                  <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
                     className="rounded-full"
                     onClick={() => setQuickTab("owned")}
@@ -1299,9 +1289,9 @@ const handleScanFileChange = async (
                     Owned
                   </Button>
                   <Button
-                    variant={quickTab === "shared" ? "default" : "outline"}
-                    className="rounded-full"
-                    onClick={() => setQuickTab("shared")}
+                  variant={quickTab === "shared" ? "default" : "outline"}
+                  className="rounded-full"
+                  onClick={() => setQuickTab("shared")}
                   >
                     Shared
                   </Button>
@@ -1350,6 +1340,20 @@ const handleScanFileChange = async (
                   <Button
                     variant="outline"
                     className="rounded-2xl border-rose-100"
+                    disabled={isScanning}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {isScanning ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="mr-2 h-4 w-4" />
+                    )}
+                    {isScanning ? "Scanning..." : "Scan Lipstick"}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100"
                     onClick={exportVisibleItemsToCsv}
                   >
                     <Download className="mr-2 h-4 w-4" />
@@ -1389,9 +1393,9 @@ const handleScanFileChange = async (
                           <SelectContent>
                             <SelectItem value="newest">Newest first</SelectItem>
                             <SelectItem value="oldest">Oldest first</SelectItem>
-                            <SelectItem value="brand-az">Brand A–Z</SelectItem>
-                            <SelectItem value="brand-za">Brand Z–A</SelectItem>
-                            <SelectItem value="shade-az">Shade A–Z</SelectItem>
+                            <SelectItem value="brand-az">Brand A-Z</SelectItem>
+                            <SelectItem value="brand-za">Brand Z-A</SelectItem>
+                            <SelectItem value="shade-az">Shade A-Z</SelectItem>
                             <SelectItem value="favorites-first">Favorites first</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1588,6 +1592,7 @@ const handleScanFileChange = async (
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div className="space-y-2">
                             <Label>Finish</Label>
                             <Select
@@ -1608,6 +1613,7 @@ const handleScanFileChange = async (
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div className="space-y-2">
                             <Label>Undertone</Label>
                             <Select
@@ -1624,6 +1630,7 @@ const handleScanFileChange = async (
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div className="space-y-2">
                             <Label>Color family</Label>
                             <Select
@@ -1666,6 +1673,7 @@ const handleScanFileChange = async (
                               </SelectContent>
                             </Select>
                           </div>
+
                           <div className="space-y-2">
                             <Label>Best for</Label>
                             <Select
@@ -1725,6 +1733,7 @@ const handleScanFileChange = async (
                             </>
                           )}
                         </Button>
+
                         <Button
                           variant="outline"
                           onClick={handleCancelForm}
