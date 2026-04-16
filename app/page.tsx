@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Plus, Trash2, Package2, Sparkles, Calendar, Tag, LogOut } from "lucide-react";
+import { Search, Plus, Trash2, Package2, Sparkles, Calendar, Tag, LogOut, Share2 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 
 type LipstickItem = {
   id: number;
+  ownerUserId: string;
   brand: string;
   shade: string;
   type: string;
@@ -27,7 +28,7 @@ type LipstickItem = {
   notes: string;
 };
 
-const emptyForm: Omit<LipstickItem, "id"> = {
+const emptyForm: Omit<LipstickItem, "id" | "ownerUserId"> = {
   brand: "",
   shade: "",
   type: "Bullet",
@@ -53,8 +54,11 @@ export default function LipstickCatalogApp() {
   const [query, setQuery] = useState("");
   const [finishFilter, setFinishFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [form, setForm] = useState<Omit<LipstickItem, "id">>(emptyForm);
+  const [form, setForm] = useState<Omit<LipstickItem, "id" | "ownerUserId">>(emptyForm);
   const [loading, setLoading] = useState(true);
+
+  const [shareEmails, setShareEmails] = useState<Record<number, string>>({});
+  const [shareMessages, setShareMessages] = useState<Record<number, string>>({});
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -64,8 +68,12 @@ export default function LipstickCatalogApp() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setSession(newSession);
+
+      if (newSession?.user?.email) {
+        await ensureProfile(newSession.user.id, newSession.user.email);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -79,6 +87,16 @@ export default function LipstickCatalogApp() {
       setLoading(false);
     }
   }, [session]);
+
+  async function ensureProfile(userId: string, userEmail: string) {
+    await supabase.from("profiles").upsert(
+      {
+        id: userId,
+        email: userEmail.toLowerCase(),
+      },
+      { onConflict: "id" }
+    );
+  }
 
   async function fetchLipsticks() {
     setLoading(true);
@@ -96,6 +114,7 @@ export default function LipstickCatalogApp() {
 
     const mapped: LipstickItem[] = (data ?? []).map((item) => ({
       id: item.id,
+      ownerUserId: item.owner_user_id,
       brand: item.brand,
       shade: item.shade,
       type: item.type,
@@ -121,7 +140,7 @@ export default function LipstickCatalogApp() {
     }
 
     if (authMode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
@@ -131,11 +150,15 @@ export default function LipstickCatalogApp() {
         return;
       }
 
+      if (data.user?.id && data.user.email) {
+        await ensureProfile(data.user.id, data.user.email);
+      }
+
       setAuthMessage("Account created. If email confirmation is enabled, check your inbox.");
       return;
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -143,6 +166,10 @@ export default function LipstickCatalogApp() {
     if (error) {
       setAuthMessage(error.message);
       return;
+    }
+
+    if (data.user?.id && data.user.email) {
+      await ensureProfile(data.user.id, data.user.email);
     }
 
     setAuthMessage("Signed in.");
@@ -165,7 +192,7 @@ export default function LipstickCatalogApp() {
     });
   }, [items, query, finishFilter, statusFilter]);
 
-  const updateForm = (field: keyof Omit<LipstickItem, "id">, value: string) => {
+  const updateForm = (field: keyof Omit<LipstickItem, "id" | "ownerUserId">, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -174,7 +201,7 @@ export default function LipstickCatalogApp() {
     if (!form.brand.trim() || !form.shade.trim()) return;
 
     const { error } = await supabase.from("lipsticks").insert({
-      user_id: session.user.id,
+      owner_user_id: session.user.id,
       brand: form.brand,
       shade: form.shade,
       type: form.type,
@@ -205,6 +232,65 @@ export default function LipstickCatalogApp() {
     }
 
     setItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const updateShareEmail = (lipstickId: number, value: string) => {
+    setShareEmails((prev) => ({ ...prev, [lipstickId]: value }));
+  };
+
+  const shareLipstick = async (lipstickId: number) => {
+    const shareEmail = (shareEmails[lipstickId] || "").trim().toLowerCase();
+
+    if (!shareEmail) {
+      setShareMessages((prev) => ({
+        ...prev,
+        [lipstickId]: "Enter an email to share with.",
+      }));
+      return;
+    }
+
+    if (shareEmail === session?.user?.email?.toLowerCase()) {
+      setShareMessages((prev) => ({
+        ...prev,
+        [lipstickId]: "You already own this lipstick.",
+      }));
+      return;
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .eq("email", shareEmail)
+      .single();
+
+    if (profileError || !profile) {
+      setShareMessages((prev) => ({
+        ...prev,
+        [lipstickId]: "No user found with that email.",
+      }));
+      return;
+    }
+
+    const { error: shareError } = await supabase.from("lipstick_shares").insert({
+      lipstick_id: lipstickId,
+      shared_with_user_id: profile.id,
+    });
+
+    if (shareError) {
+      setShareMessages((prev) => ({
+        ...prev,
+        [lipstickId]: shareError.message.includes("duplicate")
+          ? "Already shared with this user."
+          : shareError.message,
+      }));
+      return;
+    }
+
+    setShareMessages((prev) => ({
+      ...prev,
+      [lipstickId]: "Lipstick shared successfully.",
+    }));
+    setShareEmails((prev) => ({ ...prev, [lipstickId]: "" }));
   };
 
   if (authLoading) {
@@ -242,9 +328,7 @@ export default function LipstickCatalogApp() {
                 />
               </div>
 
-              {authMessage ? (
-                <p className="text-sm text-slate-600">{authMessage}</p>
-              ) : null}
+              {authMessage ? <p className="text-sm text-slate-600">{authMessage}</p> : null}
 
               <Button onClick={handleAuth} className="w-full rounded-2xl">
                 {authMode === "signin" ? "Sign In" : "Create Account"}
@@ -252,14 +336,10 @@ export default function LipstickCatalogApp() {
 
               <Button
                 variant="outline"
-                onClick={() =>
-                  setAuthMode((prev) => (prev === "signin" ? "signup" : "signin"))
-                }
+                onClick={() => setAuthMode((prev) => (prev === "signin" ? "signup" : "signin"))}
                 className="w-full rounded-2xl"
               >
-                {authMode === "signin"
-                  ? "Need an account? Sign up"
-                  : "Already have an account? Sign in"}
+                {authMode === "signin" ? "Need an account? Sign up" : "Already have an account? Sign in"}
               </Button>
             </CardContent>
           </Card>
@@ -268,8 +348,8 @@ export default function LipstickCatalogApp() {
     );
   }
 
-  const totalOwned = items.filter((x) => x.status === "Owned").length;
-  const totalWishlist = items.filter((x) => x.status === "Wishlist").length;
+  const totalOwned = items.filter((x) => x.ownerUserId === session.user.id).length;
+  const totalShared = items.filter((x) => x.ownerUserId !== session.user.id).length;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-pink-50 p-4 md:p-8">
@@ -283,15 +363,19 @@ export default function LipstickCatalogApp() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">My Lipstick Library</h1>
-              <p className="mt-1 text-sm text-slate-600">
-                Signed in as {session.user.email}
-              </p>
+              <p className="mt-1 text-sm text-slate-600">Signed in as {session.user.email}</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">Owned: {totalOwned}</Badge>
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">Wishlist: {totalWishlist}</Badge>
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">Total: {items.length}</Badge>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+                Owned: {totalOwned}
+              </Badge>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+                Shared with me: {totalShared}
+              </Badge>
+              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+                Total: {items.length}
+              </Badge>
               <Button variant="outline" className="rounded-2xl" onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" /> Sign Out
               </Button>
@@ -482,47 +566,84 @@ export default function LipstickCatalogApp() {
                 </CardContent>
               </Card>
             ) : (
-              filteredItems.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: index * 0.03 }}
-                >
-                  <Card className="rounded-3xl border shadow-sm">
-                    <CardContent className="p-5">
-                      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                        <div className="space-y-3">
-                          <div>
-                            <div className="flex flex-wrap items-center gap-2">
-                              <h2 className="text-xl font-semibold">{item.shade}</h2>
-                              <Badge className="rounded-full">{item.status}</Badge>
+              filteredItems.map((item, index) => {
+                const isOwner = session.user.id === item.ownerUserId;
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: index * 0.03 }}
+                  >
+                    <Card className="rounded-3xl border shadow-sm">
+                      <CardContent className="p-5">
+                        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                          <div className="space-y-3 flex-1">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h2 className="text-xl font-semibold">{item.shade}</h2>
+                                <Badge className="rounded-full">{item.status}</Badge>
+                                {isOwner ? (
+                                  <Badge variant="secondary" className="rounded-full">Owned by you</Badge>
+                                ) : (
+                                  <Badge variant="secondary" className="rounded-full">Shared with you</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-slate-600">{item.brand}</p>
                             </div>
-                            <p className="text-sm text-slate-600">{item.brand}</p>
+
+                            <div className="flex flex-wrap gap-2">
+                              <Badge variant="secondary" className="rounded-full">{item.type}</Badge>
+                              <Badge variant="secondary" className="rounded-full">{item.finish}</Badge>
+                              <Badge variant="secondary" className="rounded-full">{item.undertone}</Badge>
+                              <Badge variant="secondary" className="rounded-full">{item.colorFamily}</Badge>
+                            </div>
+
+                            <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                              <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Best for: {item.occasion}</div>
+                              <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {item.purchaseDate || "No date added"}</div>
+                              <div className="flex items-center gap-2 sm:col-span-2"><Tag className="h-4 w-4" /> {item.notes || "No notes added"}</div>
+                            </div>
+
+                            {isOwner ? (
+                              <div className="rounded-2xl border p-3 space-y-2">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                  <Share2 className="h-4 w-4" /> Share this lipstick
+                                </div>
+                                <div className="flex flex-col gap-2 sm:flex-row">
+                                  <Input
+                                    value={shareEmails[item.id] || ""}
+                                    onChange={(e) => updateShareEmail(item.id, e.target.value)}
+                                    placeholder="friend@example.com"
+                                    className="rounded-2xl"
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-2xl"
+                                    onClick={() => shareLipstick(item.id)}
+                                  >
+                                    Share
+                                  </Button>
+                                </div>
+                                {shareMessages[item.id] ? (
+                                  <p className="text-sm text-slate-600">{shareMessages[item.id]}</p>
+                                ) : null}
+                              </div>
+                            ) : null}
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            <Badge variant="secondary" className="rounded-full">{item.type}</Badge>
-                            <Badge variant="secondary" className="rounded-full">{item.finish}</Badge>
-                            <Badge variant="secondary" className="rounded-full">{item.undertone}</Badge>
-                            <Badge variant="secondary" className="rounded-full">{item.colorFamily}</Badge>
-                          </div>
-
-                          <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                            <div className="flex items-center gap-2"><Sparkles className="h-4 w-4" /> Best for: {item.occasion}</div>
-                            <div className="flex items-center gap-2"><Calendar className="h-4 w-4" /> {item.purchaseDate || "No date added"}</div>
-                            <div className="flex items-center gap-2 sm:col-span-2"><Tag className="h-4 w-4" /> {item.notes || "No notes added"}</div>
-                          </div>
+                          {isOwner ? (
+                            <Button variant="outline" className="rounded-2xl" onClick={() => deleteLipstick(item.id)}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </Button>
+                          ) : null}
                         </div>
-
-                        <Button variant="outline" className="rounded-2xl" onClick={() => deleteLipstick(item.id)}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Delete
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })
             )}
           </div>
         </div>
