@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import BarcodeScanner from "@/components/BarcodeScanner";
 import {
   Search,
   Plus,
@@ -179,6 +180,7 @@ export default function LipstickCatalogApp() {
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
 
   const [isScanning, setIsScanning] = useState(false);
+  const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
 
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
@@ -195,6 +197,56 @@ export default function LipstickCatalogApp() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isEditing = editingLipstickId !== null;
+  const handleBarcodeDetected = async (barcode: string) => {
+    try {
+      setIsBarcodeScannerOpen(false);
+      setIsScanning(true);
+      resetForm();
+      setIsAddFormOpen(true);
+
+      const res = await fetch("/api/lookup-barcode", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ barcode }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showNotice("error", data?.error || "Failed to process barcode.");
+        return;
+      }
+
+      const scanned = data?.result ?? {};
+
+      setEditingLipstickId(null);
+
+      setForm({
+        ...emptyForm,
+        brand: typeof scanned.brand === "string" ? scanned.brand : "",
+        shade: typeof scanned.shade === "string" ? scanned.shade : "",
+        type: typeof scanned.type === "string" ? scanned.type : "",
+        finish: typeof scanned.finish === "string" ? scanned.finish : "",
+        undertone: typeof scanned.undertone === "string" ? scanned.undertone : "",
+        colorFamily: typeof scanned.colorFamily === "string" ? scanned.colorFamily : "",
+        status:
+          typeof scanned.status === "string" && scanned.status.trim()
+            ? scanned.status
+            : "Owned",
+        occasion: typeof scanned.occasion === "string" ? scanned.occasion : "",
+        notes: typeof scanned.notes === "string" ? scanned.notes : `Barcode: ${barcode}`,
+      });
+
+      showNotice("success", `Barcode scanned: ${barcode}`);
+    } catch (error) {
+      console.error(error);
+      showNotice("error", "Could not process barcode.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
 
   const showNotice = (type: "success" | "error", text: string) => {
     setNotice({ type, text });
@@ -459,7 +511,7 @@ export default function LipstickCatalogApp() {
     setIsAddFormOpen(false);
   };
 
-    const startEditLipstick = (item: LipstickItem) => {
+  const startEditLipstick = (item: LipstickItem) => {
     setForm({
       brand: item.brand,
       shade: item.shade,
@@ -841,7 +893,7 @@ export default function LipstickCatalogApp() {
     showNotice("success", "Lipstick restored.");
   };
 
-    const permanentlyDeleteLipstick = async (id: number) => {
+  const permanentlyDeleteLipstick = async (id: number) => {
     const confirmed = window.confirm(
       "This will permanently delete the lipstick. This cannot be undone. Continue?"
     );
@@ -1194,17 +1246,21 @@ export default function LipstickCatalogApp() {
           className="hidden"
           onChange={handleScanFileChange}
         />
-                <AnimatePresence>
+        <BarcodeScanner
+          isOpen={isBarcodeScannerOpen}
+          onClose={() => setIsBarcodeScannerOpen(false)}
+          onDetected={handleBarcodeDetected}
+        />
+        <AnimatePresence>
           {notice ? (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className={`fixed left-1/2 top-4 z-50 w-[92%] max-w-md -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg ${
-                notice.type === "success"
+              className={`fixed left-1/2 top-4 z-50 w-[92%] max-w-md -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg ${notice.type === "success"
                   ? "border-green-200 bg-white text-green-800"
                   : "border-rose-200 bg-white text-rose-700"
-              }`}
+                }`}
             >
               {notice.text}
             </motion.div>
@@ -1289,9 +1345,9 @@ export default function LipstickCatalogApp() {
                     Owned
                   </Button>
                   <Button
-                  variant={quickTab === "shared" ? "default" : "outline"}
-                  className="rounded-full"
-                  onClick={() => setQuickTab("shared")}
+                    variant={quickTab === "shared" ? "default" : "outline"}
+                    className="rounded-full"
+                    onClick={() => setQuickTab("shared")}
                   >
                     Shared
                   </Button>
@@ -1341,14 +1397,14 @@ export default function LipstickCatalogApp() {
                     variant="outline"
                     className="rounded-2xl border-rose-100"
                     disabled={isScanning}
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => setIsBarcodeScannerOpen(true)}
                   >
                     {isScanning ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
                       <Camera className="mr-2 h-4 w-4" />
                     )}
-                    {isScanning ? "Scanning..." : "Scan Lipstick"}
+                    {isScanning ? "Scanning..." : "Scan Barcode"}
                   </Button>
 
                   <Button
@@ -1790,9 +1846,9 @@ export default function LipstickCatalogApp() {
                 const colorData = getColorData(item.colorFamily);
                 const deletedDaysAgo = item.deletedAt
                   ? Math.floor(
-                      (Date.now() - new Date(item.deletedAt).getTime()) /
-                        (1000 * 60 * 60 * 24)
-                    )
+                    (Date.now() - new Date(item.deletedAt).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                  )
                   : null;
 
                 const daysRemaining =
@@ -1874,9 +1930,8 @@ export default function LipstickCatalogApp() {
                               variant="ghost"
                               size="icon"
                               disabled={isDeleted}
-                              className={`rounded-full ${
-                                item.favorite ? "text-rose-500" : "text-slate-400"
-                              }`}
+                              className={`rounded-full ${item.favorite ? "text-rose-500" : "text-slate-400"
+                                }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 void toggleFavorite(item.id);
@@ -2023,16 +2078,16 @@ export default function LipstickCatalogApp() {
                                     {isDeleted
                                       ? "This lipstick is in Trash."
                                       : isOwnedByYou
-                                      ? "You own this lipstick."
-                                      : "This lipstick was shared with you."}
+                                        ? "You own this lipstick."
+                                        : "This lipstick was shared with you."}
                                   </p>
 
                                   <p className="mt-1 text-sm text-slate-600">
                                     {isDeleted
                                       ? "You can restore it or permanently delete it."
                                       : isOwnedByYou
-                                      ? "You can edit, move it to Trash, favorite, and share it with someone else."
-                                      : "You can keep it in your list or remove it from your view."}
+                                        ? "You can edit, move it to Trash, favorite, and share it with someone else."
+                                        : "You can keep it in your list or remove it from your view."}
                                   </p>
 
                                   {isDeleted && deletedDaysAgo !== null ? (
