@@ -38,6 +38,9 @@ export default function BarcodeScanner({
         qrbox: { width: 250, height: 120 },
         rememberLastUsedCamera: true,
         supportedScanTypes: [0, 1], // camera + file
+        videoConstraints: {
+          facingMode: { ideal: "environment" },
+        },
         formatsToSupport: [
           Html5QrcodeSupportedFormats.UPC_A,
           Html5QrcodeSupportedFormats.UPC_E,
