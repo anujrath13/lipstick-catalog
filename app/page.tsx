@@ -79,7 +79,7 @@ type LipstickFormValues = {
   notes: string;
 };
 
-const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 
 const todayString = () => new Date().toISOString().split("T")[0];
@@ -261,7 +261,7 @@ export default function LipstickCatalogApp() {
         }
         await supabase.auth.signOut();
         localStorage.removeItem(LAST_ACTIVITY_KEY);
-        setAuthMessage("You were logged out after 10 minutes of inactivity.");
+        setAuthMessage("You were logged out after 20 minutes of inactivity.");
         return;
       }
 
@@ -274,7 +274,7 @@ export default function LipstickCatalogApp() {
       inactivityTimeoutRef.current = setTimeout(async () => {
         await supabase.auth.signOut();
         localStorage.removeItem(LAST_ACTIVITY_KEY);
-        setAuthMessage("You were logged out after 10 minutes of inactivity.");
+        setAuthMessage("You were logged out after 20 minutes of inactivity.");
       }, remainingTime);
     };
 
@@ -541,18 +541,6 @@ export default function LipstickCatalogApp() {
   const validateForm = () => {
     if (!form.brand.trim() || !form.shade.trim()) {
       showNotice("error", "Brand and shade are required.");
-      return false;
-    }
-
-    if (
-      !form.type ||
-      !form.finish ||
-      !form.undertone ||
-      !form.colorFamily ||
-      !form.status ||
-      !form.occasion
-    ) {
-      showNotice("error", "Please select all dropdown fields before saving.");
       return false;
     }
 
