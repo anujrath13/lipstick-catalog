@@ -400,6 +400,83 @@ export default function LipstickCatalogApp() {
     await refreshDataOnly();
     showNotice("success", "Library refreshed.");
   };
+  
+    const exportVisibleItemsToCsv = () => {
+    if (visibleItems.length === 0) {
+      showNotice("error", "No lipsticks to export.");
+      return;
+    }
+
+    const headers = [
+      "Brand",
+      "Shade",
+      "Type",
+      "Finish",
+      "Undertone",
+      "Color Family",
+      "Status",
+      "Purchase Date",
+      "Occasion",
+      "Notes",
+      "Favorite",
+      "Ownership",
+      "Deleted At",
+    ];
+
+    const escapeCsvValue = (value: string | number | boolean | null | undefined) => {
+      const stringValue = String(value ?? "");
+      if (
+        stringValue.includes(",") ||
+        stringValue.includes('"') ||
+        stringValue.includes("\n")
+      ) {
+        return `"${stringValue.replace(/"/g, '""')}"`;
+      }
+      return stringValue;
+    };
+
+    const rows = visibleItems.map((item) => {
+      const ownership =
+        item.ownerUserId === session?.user?.id ? "Owned" : "Shared";
+
+      return [
+        item.brand,
+        item.shade,
+        item.type,
+        item.finish,
+        item.undertone,
+        item.colorFamily,
+        item.status,
+        item.purchaseDate,
+        item.occasion,
+        item.notes,
+        item.favorite ? "Yes" : "No",
+        ownership,
+        item.deletedAt ?? "",
+      ].map(escapeCsvValue);
+    });
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const dateStamp = new Date().toISOString().split("T")[0];
+
+    link.href = url;
+    link.setAttribute("download", `lipstick-library-${dateStamp}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+    showNotice("success", "CSV exported.");
+  };
 
   async function ensureProfileRow(userId: string, userEmail: string | null) {
     if (!userEmail) return;
@@ -1170,6 +1247,15 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant="outline"
                     className="rounded-2xl border-rose-100"
+                    onClick={exportVisibleItemsToCsv}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Export CSV
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100"
                     onClick={() => void handleSignOut()}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -1590,6 +1676,17 @@ export default function LipstickCatalogApp() {
                 const isExpanded = expandedItems.includes(item.id);
                 const isDeleted = !!item.deletedAt;
                 const colorData = getColorData(item.colorFamily);
+                const deletedDaysAgo = item.deletedAt
+                  ? Math.floor(
+                      (Date.now() - new Date(item.deletedAt).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    )
+                  : null;
+
+                const daysRemaining =
+                  item.deletedAt && deletedDaysAgo !== null
+                    ? Math.max(0, 30 - deletedDaysAgo)
+                    : null;
 
                 return (
                   <motion.div
@@ -1817,6 +1914,7 @@ export default function LipstickCatalogApp() {
                                       ? "You own this lipstick."
                                       : "This lipstick was shared with you."}
                                   </p>
+
                                   <p className="mt-1 text-sm text-slate-600">
                                     {isDeleted
                                       ? "You can restore it or permanently delete it."
@@ -1824,6 +1922,21 @@ export default function LipstickCatalogApp() {
                                       ? "You can edit, move it to Trash, favorite, and share it with someone else."
                                       : "You can keep it in your list or remove it from your view."}
                                   </p>
+
+                                  {isDeleted && deletedDaysAgo !== null ? (
+                                    <p className="mt-2 text-sm text-slate-600">
+                                      Deleted {deletedDaysAgo} day
+                                      {deletedDaysAgo === 1 ? "" : "s"} ago.
+                                    </p>
+                                  ) : null}
+
+                                  {isDeleted && daysRemaining !== null ? (
+                                    <p className="mt-1 text-sm text-slate-600">
+                                      {daysRemaining} day
+                                      {daysRemaining === 1 ? "" : "s"} remaining before
+                                      permanent cleanup.
+                                    </p>
+                                  ) : null}
                                 </div>
 
                                 {isOwnedByYou && !isDeleted ? (
