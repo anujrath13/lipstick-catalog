@@ -21,6 +21,7 @@ import {
   Funnel,
   ArrowUpDown,
   Heart,
+  Pencil,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -65,21 +66,34 @@ type ShareRow = {
   shared_with_user_id: string;
 };
 
+type LipstickFormValues = {
+  brand: string;
+  shade: string;
+  type: string;
+  finish: string;
+  undertone: string;
+  colorFamily: string;
+  status: string;
+  purchaseDate: string;
+  occasion: string;
+  notes: string;
+};
+
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
-const emptyForm: Omit<LipstickItem, "id" | "ownerUserId" | "favorite"> = {
+const emptyForm: LipstickFormValues = {
   brand: "",
   shade: "",
-  type: "Bullet",
-  finish: "Matte",
-  undertone: "Neutral",
-  colorFamily: "Nude",
-  status: "Owned",
+  type: "",
+  finish: "",
+  undertone: "",
+  colorFamily: "",
+  status: "",
   purchaseDate: "",
-  occasion: "Daily",
+  occasion: "",
   notes: "",
 };
 
@@ -155,9 +169,8 @@ export default function LipstickCatalogApp() {
   const [ownershipFilter, setOwnershipFilter] = useState("all");
   const [quickTab, setQuickTab] = useState<"all" | "owned" | "shared">("all");
 
-  const [form, setForm] = useState<
-    Omit<LipstickItem, "id" | "ownerUserId" | "favorite">
-  >(emptyForm);
+  const [form, setForm] = useState<LipstickFormValues>(emptyForm);
+  const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
 
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
@@ -171,6 +184,8 @@ export default function LipstickCatalogApp() {
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
+
+  const isEditing = editingLipstickId !== null;
 
   const showNotice = (type: "success" | "error", text: string) => {
     setNotice({ type, text });
@@ -317,10 +332,7 @@ export default function LipstickCatalogApp() {
     );
   };
 
-  const updateForm = (
-    field: keyof Omit<LipstickItem, "id" | "ownerUserId" | "favorite">,
-    value: string
-  ) => {
+  const updateForm = (field: keyof LipstickFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -340,6 +352,12 @@ export default function LipstickCatalogApp() {
 
   const resetForm = () => {
     setForm(emptyForm);
+    setEditingLipstickId(null);
+  };
+
+  const startAddLipstick = () => {
+    resetForm();
+    setIsAddFormOpen(true);
   };
 
   const handleCancelForm = () => {
@@ -347,10 +365,29 @@ export default function LipstickCatalogApp() {
     setIsAddFormOpen(false);
   };
 
+  const startEditLipstick = (item: LipstickItem) => {
+    setForm({
+      brand: item.brand,
+      shade: item.shade,
+      type: item.type,
+      finish: item.finish,
+      undertone: item.undertone,
+      colorFamily: item.colorFamily,
+      status: item.status,
+      purchaseDate: item.purchaseDate,
+      occasion: item.occasion,
+      notes: item.notes,
+    });
+    setEditingLipstickId(item.id);
+    setIsAddFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const handleRefreshView = async () => {
     setExpandedItems([]);
     setIsAddFormOpen(false);
     setIsFiltersOpen(false);
+    resetForm();
     clearFilters();
     await refreshDataOnly();
     showNotice("success", "Library refreshed.");
@@ -494,14 +531,32 @@ export default function LipstickCatalogApp() {
     await supabase.auth.signOut();
   }
 
-  const addLipstick = async () => {
-    if (!session?.user?.id) return;
+  const validateForm = () => {
     if (!form.brand.trim() || !form.shade.trim()) {
       showNotice("error", "Brand and shade are required.");
-      return;
+      return false;
     }
 
-    const { error } = await supabase.from("lipsticks").insert({
+    if (
+      !form.type ||
+      !form.finish ||
+      !form.undertone ||
+      !form.colorFamily ||
+      !form.status ||
+      !form.occasion
+    ) {
+      showNotice("error", "Please select all dropdown fields before saving.");
+      return false;
+    }
+
+    return true;
+  };
+
+  const saveLipstick = async () => {
+    if (!session?.user?.id) return;
+    if (!validateForm()) return;
+
+    const payload = {
       owner_user_id: session.user.id,
       brand: form.brand,
       shade: form.shade,
@@ -513,7 +568,28 @@ export default function LipstickCatalogApp() {
       purchase_date: form.purchaseDate || todayString(),
       occasion: form.occasion,
       notes: form.notes,
-    });
+    };
+
+    if (isEditing && editingLipstickId !== null) {
+      const { error } = await supabase
+        .from("lipsticks")
+        .update(payload)
+        .eq("id", editingLipstickId);
+
+      if (error) {
+        console.error("Error updating lipstick:", error);
+        showNotice("error", "Could not update lipstick.");
+        return;
+      }
+
+      resetForm();
+      setIsAddFormOpen(false);
+      await refreshDataOnly();
+      showNotice("success", "Lipstick updated.");
+      return;
+    }
+
+    const { error } = await supabase.from("lipsticks").insert(payload);
 
     if (error) {
       console.error("Error saving lipstick:", error);
@@ -538,6 +614,12 @@ export default function LipstickCatalogApp() {
 
     setItems((prev) => prev.filter((item) => item.id !== id));
     setExpandedItems((prev) => prev.filter((itemId) => itemId !== id));
+
+    if (editingLipstickId === id) {
+      resetForm();
+      setIsAddFormOpen(false);
+    }
+
     showNotice("success", "Lipstick deleted.");
   };
 
@@ -942,7 +1024,7 @@ export default function LipstickCatalogApp() {
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden rounded-3xl border border-rose-100 bg-rose-50/50 p-4"
                   >
-                    <div className="mb-3 flex items-center justify-between">
+                    <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div className="flex items-center gap-2">
                         <Funnel className="h-4 w-4 text-slate-500" />
                         <p className="text-sm font-medium">Refine your view</p>
@@ -1074,11 +1156,18 @@ export default function LipstickCatalogApp() {
             <Card className="overflow-hidden rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
               <CardHeader
                 className="cursor-pointer"
-                onClick={() => setIsAddFormOpen((prev) => !prev)}
+                onClick={() => {
+                  if (isAddFormOpen) {
+                    handleCancelForm();
+                  } else {
+                    startAddLipstick();
+                  }
+                }}
               >
                 <CardTitle className="flex items-center justify-between text-xl">
                   <span className="flex items-center gap-2">
-                    <Plus className="h-5 w-5" /> Add a new lipstick
+                    {isEditing ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                    {isEditing ? "Edit lipstick" : "Add a new lipstick"}
                   </span>
                   {isAddFormOpen ? (
                     <ChevronUp className="h-5 w-5" />
@@ -1087,7 +1176,9 @@ export default function LipstickCatalogApp() {
                   )}
                 </CardTitle>
                 <p className="text-sm font-normal text-slate-600">
-                  Save a new shade to your library.
+                  {isEditing
+                    ? "Update the details of your selected lipstick."
+                    : "Save a new shade to your library."}
                 </p>
               </CardHeader>
 
@@ -1130,9 +1221,9 @@ export default function LipstickCatalogApp() {
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
                             <Label>Type</Label>
-                            <Select value={form.type} onValueChange={(v) => updateForm("type", v)}>
+                            <Select value={form.type || undefined} onValueChange={(v) => updateForm("type", v)}>
                               <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue />
+                                <SelectValue placeholder="Select type" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Bullet">Bullet</SelectItem>
@@ -1146,11 +1237,11 @@ export default function LipstickCatalogApp() {
                           <div className="space-y-2">
                             <Label>Finish</Label>
                             <Select
-                              value={form.finish}
+                              value={form.finish || undefined}
                               onValueChange={(v) => updateForm("finish", v)}
                             >
                               <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue />
+                                <SelectValue placeholder="Select finish" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Matte">Matte</SelectItem>
@@ -1166,11 +1257,11 @@ export default function LipstickCatalogApp() {
                           <div className="space-y-2">
                             <Label>Undertone</Label>
                             <Select
-                              value={form.undertone}
+                              value={form.undertone || undefined}
                               onValueChange={(v) => updateForm("undertone", v)}
                             >
                               <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue />
+                                <SelectValue placeholder="Select undertone" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Warm">Warm</SelectItem>
@@ -1182,11 +1273,11 @@ export default function LipstickCatalogApp() {
                           <div className="space-y-2">
                             <Label>Color family</Label>
                             <Select
-                              value={form.colorFamily}
+                              value={form.colorFamily || undefined}
                               onValueChange={(v) => updateForm("colorFamily", v)}
                             >
                               <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue />
+                                <SelectValue placeholder="Select color family" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Red">Red</SelectItem>
@@ -1208,11 +1299,11 @@ export default function LipstickCatalogApp() {
                           <div className="space-y-2">
                             <Label>Status</Label>
                             <Select
-                              value={form.status}
+                              value={form.status || undefined}
                               onValueChange={(v) => updateForm("status", v)}
                             >
                               <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue />
+                                <SelectValue placeholder="Select status" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Owned">Owned</SelectItem>
@@ -1224,11 +1315,11 @@ export default function LipstickCatalogApp() {
                           <div className="space-y-2">
                             <Label>Best for</Label>
                             <Select
-                              value={form.occasion}
+                              value={form.occasion || undefined}
                               onValueChange={(v) => updateForm("occasion", v)}
                             >
                               <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue />
+                                <SelectValue placeholder="Select best use" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Daily">Daily</SelectItem>
@@ -1264,10 +1355,20 @@ export default function LipstickCatalogApp() {
 
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
-                          onClick={() => void addLipstick()}
+                          onClick={() => void saveLipstick()}
                           className="w-full rounded-2xl sm:flex-1"
                         >
-                          <Plus className="mr-2 h-4 w-4" /> Save Lipstick
+                          {isEditing ? (
+                            <>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Update Lipstick
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Save Lipstick
+                            </>
+                          )}
                         </Button>
                         <Button
                           variant="outline"
@@ -1311,7 +1412,7 @@ export default function LipstickCatalogApp() {
                     </Button>
                     <Button
                       className="rounded-2xl"
-                      onClick={() => setIsAddFormOpen(true)}
+                      onClick={startAddLipstick}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add a lipstick
@@ -1393,16 +1494,29 @@ export default function LipstickCatalogApp() {
                             </Button>
 
                             {isOwnedByYou ? (
-                              <Button
-                                variant="outline"
-                                className="rounded-2xl border-rose-100 bg-white/70"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void deleteOwnedLipstick(item.id);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete
-                              </Button>
+                              <>
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/70"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditLipstick(item);
+                                  }}
+                                >
+                                  <Pencil className="mr-2 h-4 w-4" /> Edit
+                                </Button>
+
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/70"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void deleteOwnedLipstick(item.id);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                </Button>
+                              </>
                             ) : (
                               <Button
                                 variant="outline"
