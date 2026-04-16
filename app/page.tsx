@@ -22,6 +22,7 @@ import {
   ArrowUpDown,
   Heart,
   Pencil,
+  Download
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
