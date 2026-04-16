@@ -407,7 +407,7 @@ export default function LipstickCatalogApp() {
       purchaseDate: item.purchase_date ?? "",
       occasion: item.occasion ?? "",
       notes: item.notes ?? "",
-      favorite: false,
+      favorite: item.favorite ?? false,
     }));
 
     setItems((prev) => {
@@ -634,13 +634,34 @@ export default function LipstickCatalogApp() {
     showNotice("success", "Lipstick shared.");
   };
 
-  const toggleFavorite = (id: number) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, favorite: !item.favorite } : item
-      )
-    );
-  };
+  const toggleFavorite = async (id: number) => {
+  const currentItem = items.find((item) => item.id === id);
+  if (!currentItem) return;
+
+  const newFavoriteValue = !currentItem.favorite;
+
+  const { error } = await supabase
+    .from("lipsticks")
+    .update({ favorite: newFavoriteValue })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error updating favorite:", error);
+    showNotice("error", "Could not update favorite.");
+    return;
+  }
+
+  setItems((prev) =>
+    prev.map((item) =>
+      item.id === id ? { ...item, favorite: newFavoriteValue } : item
+    )
+  );
+
+  showNotice(
+    "success",
+    newFavoriteValue ? "Added to favorites." : "Removed from favorites."
+  );
+};
 
   const visibleItems = useMemo(() => {
     const filtered = items.filter((item) => {
