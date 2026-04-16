@@ -15,6 +15,7 @@ import {
   ChevronUp,
   Share2,
   X,
+  RotateCcw,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -58,6 +59,10 @@ type ShareRow = {
   shared_with_user_id: string;
 };
 
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+
+const todayString = () => new Date().toISOString().split("T")[0];
+
 const emptyForm: Omit<LipstickItem, "id" | "ownerUserId"> = {
   brand: "",
   shade: "",
@@ -71,7 +76,15 @@ const emptyForm: Omit<LipstickItem, "id" | "ownerUserId"> = {
   notes: "",
 };
 
-const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+const colorFamilyMap: Record<string, string> = {
+  Red: "bg-red-400",
+  Pink: "bg-pink-400",
+  Berry: "bg-purple-400",
+  Brown: "bg-amber-700",
+  Nude: "bg-stone-300",
+  Coral: "bg-orange-400",
+  Mauve: "bg-violet-300",
+};
 
 export default function LipstickCatalogApp() {
   const [session, setSession] = useState<Session | null>(null);
@@ -92,7 +105,6 @@ export default function LipstickCatalogApp() {
   const [undertoneFilter, setUndertoneFilter] = useState("all");
   const [colorFamilyFilter, setColorFamilyFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [occasionFilter, setOccasionFilter] = useState("all");
   const [ownershipFilter, setOwnershipFilter] = useState("all");
 
   const [form, setForm] = useState<Omit<LipstickItem, "id" | "ownerUserId">>(
@@ -123,8 +135,7 @@ export default function LipstickCatalogApp() {
 
   useEffect(() => {
     if (session) {
-      fetchLipsticks();
-      fetchShareRows();
+      void refreshDataOnly();
     } else {
       setItems([]);
       setShareRows([]);
@@ -192,6 +203,32 @@ export default function LipstickCatalogApp() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const clearFilters = () => {
+    setQuery("");
+    setTypeFilter("all");
+    setFinishFilter("all");
+    setUndertoneFilter("all");
+    setColorFamilyFilter("all");
+    setStatusFilter("all");
+    setOwnershipFilter("all");
+  };
+
+  const resetForm = () => {
+    setForm(emptyForm);
+  };
+
+  const handleCancelForm = () => {
+    resetForm();
+    setIsAddFormOpen(false);
+  };
+
+  const handleRefreshView = async () => {
+    clearFilters();
+    setExpandedItems([]);
+    setIsAddFormOpen(false);
+    await refreshDataOnly();
+  };
+
   async function ensureProfileRow(userId: string, userEmail: string | null) {
     if (!userEmail) return;
 
@@ -213,8 +250,6 @@ export default function LipstickCatalogApp() {
   async function fetchLipsticks() {
     if (!session?.user?.id) return;
 
-    setLoading(true);
-
     await ensureProfileRow(session.user.id, session.user.email ?? null);
 
     const { data, error } = await supabase
@@ -224,7 +259,6 @@ export default function LipstickCatalogApp() {
 
     if (error) {
       console.error("Error loading lipsticks:", error);
-      setLoading(false);
       return;
     }
 
@@ -244,7 +278,6 @@ export default function LipstickCatalogApp() {
     }));
 
     setItems(mapped);
-    setLoading(false);
   }
 
   async function fetchShareRows() {
@@ -260,6 +293,13 @@ export default function LipstickCatalogApp() {
     }
 
     setShareRows(data ?? []);
+  }
+
+  async function refreshDataOnly() {
+    if (!session?.user?.id) return;
+    setLoading(true);
+    await Promise.all([fetchLipsticks(), fetchShareRows()]);
+    setLoading(false);
   }
 
   async function handleAuth() {
@@ -331,7 +371,7 @@ export default function LipstickCatalogApp() {
       undertone: form.undertone,
       color_family: form.colorFamily,
       status: form.status,
-      purchase_date: form.purchaseDate || null,
+      purchase_date: form.purchaseDate || todayString(),
       occasion: form.occasion,
       notes: form.notes,
     });
@@ -341,9 +381,9 @@ export default function LipstickCatalogApp() {
       return;
     }
 
-    setForm(emptyForm);
+    resetForm();
     setIsAddFormOpen(false);
-    fetchLipsticks();
+    await refreshDataOnly();
   };
 
   const deleteOwnedLipstick = async (id: number) => {
@@ -440,7 +480,7 @@ export default function LipstickCatalogApp() {
       [lipstickId]: "",
     }));
 
-    fetchShareRows();
+    await fetchShareRows();
   };
 
   const filteredItems = useMemo(() => {
@@ -456,8 +496,6 @@ export default function LipstickCatalogApp() {
       const matchesColorFamily =
         colorFamilyFilter === "all" || item.colorFamily === colorFamilyFilter;
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
-      const matchesOccasion =
-        occasionFilter === "all" || item.occasion === occasionFilter;
 
       const isOwnedByYou = session?.user?.id === item.ownerUserId;
       const isSharedWithYou = session?.user?.id !== item.ownerUserId;
@@ -474,7 +512,6 @@ export default function LipstickCatalogApp() {
         matchesUndertone &&
         matchesColorFamily &&
         matchesStatus &&
-        matchesOccasion &&
         matchesOwnership
       );
     });
@@ -486,10 +523,20 @@ export default function LipstickCatalogApp() {
     undertoneFilter,
     colorFamilyFilter,
     statusFilter,
-    occasionFilter,
     ownershipFilter,
     session,
   ]);
+
+  const totalOwned = items.filter((x) => x.ownerUserId === session?.user?.id).length;
+  const totalShared = items.filter((x) => x.ownerUserId !== session?.user?.id).length;
+
+  const ownershipBadgeClasses = (isOwnedByYou: boolean) =>
+    isOwnedByYou
+      ? "border-green-200 bg-green-100 text-green-800"
+      : "border-yellow-200 bg-yellow-100 text-yellow-800";
+
+  const getColorDotClass = (colorFamily: string) =>
+    colorFamilyMap[colorFamily] ?? "bg-slate-300";
 
   if (authLoading) {
     return <div className="p-8">Loading...</div>;
@@ -497,9 +544,9 @@ export default function LipstickCatalogApp() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-pink-50 p-4 md:p-8">
+      <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-pink-50 px-4 py-6 md:p-8">
         <div className="mx-auto max-w-md">
-          <Card className="rounded-3xl border shadow-sm">
+          <Card className="rounded-3xl border border-rose-100 shadow-sm">
             <CardHeader>
               <CardTitle className="text-2xl">Sign in to My Lipstick Library</CardTitle>
             </CardHeader>
@@ -552,161 +599,161 @@ export default function LipstickCatalogApp() {
     );
   }
 
-  const totalOwned = items.filter((x) => x.ownerUserId === session.user.id).length;
-  const totalShared = items.filter((x) => x.ownerUserId !== session.user.id).length;
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-pink-50 p-4 md:p-8">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-pink-50 px-3 py-4 sm:px-4 sm:py-6 md:p-8">
+      <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="flex flex-col gap-4 rounded-3xl border bg-white/80 p-6 shadow-sm backdrop-blur"
+          className="rounded-3xl border border-rose-100 bg-white/90 p-4 shadow-sm backdrop-blur md:p-6"
         >
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold tracking-tight">My Lipstick Library</h1>
-              <p className="mt-1 text-sm text-slate-600">
-                Signed in as {session.user.email}
-              </p>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">My Lipstick Library</h1>
+                <p className="mt-1 text-sm text-slate-600">
+                  Signed in as {session.user.email}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+                  Owned: {totalOwned}
+                </Badge>
+                <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+                  Shared with me: {totalShared}
+                </Badge>
+                <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
+                  Total: {items.length}
+                </Badge>
+                <Button
+                  variant="outline"
+                  className="rounded-2xl"
+                  onClick={handleRefreshView}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" /> Refresh
+                </Button>
+                <Button variant="outline" className="rounded-2xl" onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                </Button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
-                Owned: {totalOwned}
-              </Badge>
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
-                Shared with me: {totalShared}
-              </Badge>
-              <Badge variant="secondary" className="rounded-full px-3 py-1 text-sm">
-                Total: {items.length}
-              </Badge>
-              <Button variant="outline" className="rounded-2xl" onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" /> Sign Out
-              </Button>
-            </div>
-          </div>
+            <div className="space-y-3">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
+                <Input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search by brand, shade, color, notes..."
+                  className="rounded-2xl border-rose-100 pl-9"
+                />
+              </div>
 
-          <div className="space-y-3">
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by brand, shade, color, notes..."
-                className="rounded-2xl pl-9"
-              />
-            </div>
+              <div className="overflow-x-auto">
+                <div className="flex min-w-max gap-3 pb-2">
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="w-[160px] rounded-2xl border-rose-100">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="Bullet">Bullet</SelectItem>
+                      <SelectItem value="Liquid">Liquid</SelectItem>
+                      <SelectItem value="Tint">Tint</SelectItem>
+                      <SelectItem value="Gloss">Gloss</SelectItem>
+                      <SelectItem value="Balm">Balm</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-            <div className="overflow-x-auto">
-              <div className="flex min-w-max gap-3 pb-2">
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger className="w-[160px] rounded-2xl">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All types</SelectItem>
-                    <SelectItem value="Bullet">Bullet</SelectItem>
-                    <SelectItem value="Liquid">Liquid</SelectItem>
-                    <SelectItem value="Tint">Tint</SelectItem>
-                    <SelectItem value="Gloss">Gloss</SelectItem>
-                    <SelectItem value="Balm">Balm</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={finishFilter} onValueChange={setFinishFilter}>
+                    <SelectTrigger className="w-[170px] rounded-2xl border-rose-100">
+                      <SelectValue placeholder="Finish" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All finishes</SelectItem>
+                      <SelectItem value="Matte">Matte</SelectItem>
+                      <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
+                      <SelectItem value="Soft Matte">Soft Matte</SelectItem>
+                      <SelectItem value="Satin">Satin</SelectItem>
+                      <SelectItem value="Glossy">Glossy</SelectItem>
+                      <SelectItem value="Sheer">Sheer</SelectItem>
+                      <SelectItem value="Tint">Tint</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={finishFilter} onValueChange={setFinishFilter}>
-                  <SelectTrigger className="w-[170px] rounded-2xl">
-                    <SelectValue placeholder="Finish" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All finishes</SelectItem>
-                    <SelectItem value="Matte">Matte</SelectItem>
-                    <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                    <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                    <SelectItem value="Satin">Satin</SelectItem>
-                    <SelectItem value="Glossy">Glossy</SelectItem>
-                    <SelectItem value="Sheer">Sheer</SelectItem>
-                    <SelectItem value="Tint">Tint</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
+                    <SelectTrigger className="w-[170px] rounded-2xl border-rose-100">
+                      <SelectValue placeholder="Undertone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All undertones</SelectItem>
+                      <SelectItem value="Warm">Warm</SelectItem>
+                      <SelectItem value="Cool">Cool</SelectItem>
+                      <SelectItem value="Neutral">Neutral</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
-                  <SelectTrigger className="w-[170px] rounded-2xl">
-                    <SelectValue placeholder="Undertone" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All undertones</SelectItem>
-                    <SelectItem value="Warm">Warm</SelectItem>
-                    <SelectItem value="Cool">Cool</SelectItem>
-                    <SelectItem value="Neutral">Neutral</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
+                    <SelectTrigger className="w-[180px] rounded-2xl border-rose-100">
+                      <SelectValue placeholder="Color family" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All color families</SelectItem>
+                      <SelectItem value="Red">Red</SelectItem>
+                      <SelectItem value="Pink">Pink</SelectItem>
+                      <SelectItem value="Berry">Berry</SelectItem>
+                      <SelectItem value="Brown">Brown</SelectItem>
+                      <SelectItem value="Nude">Nude</SelectItem>
+                      <SelectItem value="Coral">Coral</SelectItem>
+                      <SelectItem value="Mauve">Mauve</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
-                  <SelectTrigger className="w-[180px] rounded-2xl">
-                    <SelectValue placeholder="Color family" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All color families</SelectItem>
-                    <SelectItem value="Red">Red</SelectItem>
-                    <SelectItem value="Pink">Pink</SelectItem>
-                    <SelectItem value="Berry">Berry</SelectItem>
-                    <SelectItem value="Brown">Brown</SelectItem>
-                    <SelectItem value="Nude">Nude</SelectItem>
-                    <SelectItem value="Coral">Coral</SelectItem>
-                    <SelectItem value="Mauve">Mauve</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-[170px] rounded-2xl border-rose-100">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="Owned">Owned</SelectItem>
+                      <SelectItem value="Wishlist">Wishlist</SelectItem>
+                      <SelectItem value="Decluttered">Decluttered</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[170px] rounded-2xl">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="Owned">Owned</SelectItem>
-                    <SelectItem value="Wishlist">Wishlist</SelectItem>
-                    <SelectItem value="Decluttered">Decluttered</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+                    <SelectTrigger className="w-[190px] rounded-2xl border-rose-100">
+                      <SelectValue placeholder="Ownership" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All lipsticks</SelectItem>
+                      <SelectItem value="owned">Owned by you</SelectItem>
+                      <SelectItem value="shared">Shared with you</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-                <Select value={occasionFilter} onValueChange={setOccasionFilter}>
-                  <SelectTrigger className="w-[170px] rounded-2xl">
-                    <SelectValue placeholder="Best for" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All occasions</SelectItem>
-                    <SelectItem value="Daily">Daily</SelectItem>
-                    <SelectItem value="Office">Office</SelectItem>
-                    <SelectItem value="Evening">Evening</SelectItem>
-                    <SelectItem value="Party">Party</SelectItem>
-                    <SelectItem value="Anytime">Anytime</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-                  <SelectTrigger className="w-[190px] rounded-2xl">
-                    <SelectValue placeholder="Ownership" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All lipsticks</SelectItem>
-                    <SelectItem value="owned">Owned by you</SelectItem>
-                    <SelectItem value="shared">Shared with you</SelectItem>
-                  </SelectContent>
-                </Select>
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         </motion.div>
 
-        <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)]">
+        <div className="grid gap-5 lg:grid-cols-[380px_minmax(0,1fr)]">
           <motion.div
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <Card className="rounded-3xl border shadow-sm">
+            <Card className="rounded-3xl border border-rose-100 shadow-sm">
               <CardHeader
                 className="cursor-pointer"
                 onClick={() => setIsAddFormOpen((prev) => !prev)}
@@ -732,7 +779,7 @@ export default function LipstickCatalogApp() {
                         value={form.brand}
                         onChange={(e) => updateForm("brand", e.target.value)}
                         placeholder="e.g. MAC"
-                        className="rounded-2xl"
+                        className="rounded-2xl border-rose-100"
                       />
                     </div>
                     <div className="space-y-2">
@@ -741,7 +788,7 @@ export default function LipstickCatalogApp() {
                         value={form.shade}
                         onChange={(e) => updateForm("shade", e.target.value)}
                         placeholder="e.g. Velvet Teddy"
-                        className="rounded-2xl"
+                        className="rounded-2xl border-rose-100"
                       />
                     </div>
                   </div>
@@ -750,7 +797,7 @@ export default function LipstickCatalogApp() {
                     <div className="space-y-2">
                       <Label>Type</Label>
                       <Select value={form.type} onValueChange={(v) => updateForm("type", v)}>
-                        <SelectTrigger className="rounded-2xl">
+                        <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -768,7 +815,7 @@ export default function LipstickCatalogApp() {
                         value={form.finish}
                         onValueChange={(v) => updateForm("finish", v)}
                       >
-                        <SelectTrigger className="rounded-2xl">
+                        <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -791,7 +838,7 @@ export default function LipstickCatalogApp() {
                         value={form.undertone}
                         onValueChange={(v) => updateForm("undertone", v)}
                       >
-                        <SelectTrigger className="rounded-2xl">
+                        <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -807,7 +854,7 @@ export default function LipstickCatalogApp() {
                         value={form.colorFamily}
                         onValueChange={(v) => updateForm("colorFamily", v)}
                       >
-                        <SelectTrigger className="rounded-2xl">
+                        <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -830,7 +877,7 @@ export default function LipstickCatalogApp() {
                         value={form.status}
                         onValueChange={(v) => updateForm("status", v)}
                       >
-                        <SelectTrigger className="rounded-2xl">
+                        <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -846,7 +893,7 @@ export default function LipstickCatalogApp() {
                         value={form.occasion}
                         onValueChange={(v) => updateForm("occasion", v)}
                       >
-                        <SelectTrigger className="rounded-2xl">
+                        <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -866,7 +913,7 @@ export default function LipstickCatalogApp() {
                       type="date"
                       value={form.purchaseDate}
                       onChange={(e) => updateForm("purchaseDate", e.target.value)}
-                      className="rounded-2xl"
+                      className="rounded-2xl border-rose-100"
                     />
                   </div>
 
@@ -876,13 +923,22 @@ export default function LipstickCatalogApp() {
                       value={form.notes}
                       onChange={(e) => updateForm("notes", e.target.value)}
                       placeholder="Add dupes, wear time, where you bought it, special memories, etc."
-                      className="min-h-[100px] rounded-2xl"
+                      className="min-h-[100px] rounded-2xl border-rose-100"
                     />
                   </div>
 
-                  <Button onClick={addLipstick} className="w-full rounded-2xl">
-                    <Plus className="mr-2 h-4 w-4" /> Save Lipstick
-                  </Button>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <Button onClick={addLipstick} className="w-full rounded-2xl sm:flex-1">
+                      <Plus className="mr-2 h-4 w-4" /> Save Lipstick
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={handleCancelForm}
+                      className="w-full rounded-2xl border-rose-100 sm:w-auto"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
                 </CardContent>
               ) : null}
             </Card>
@@ -890,19 +946,26 @@ export default function LipstickCatalogApp() {
 
           <div className="space-y-4">
             {loading ? (
-              <Card className="rounded-3xl border shadow-sm">
+              <Card className="rounded-3xl border border-rose-100 shadow-sm">
                 <CardContent className="p-5">Loading...</CardContent>
               </Card>
             ) : filteredItems.length === 0 ? (
-              <Card className="rounded-3xl border shadow-sm">
-                <CardContent className="flex min-h-[240px] flex-col items-center justify-center gap-3 text-center">
+              <Card className="rounded-3xl border border-rose-100 shadow-sm">
+                <CardContent className="flex min-h-[240px] flex-col items-center justify-center gap-3 p-5 text-center">
                   <Package2 className="h-10 w-10 text-slate-400" />
                   <div>
                     <h3 className="text-lg font-medium">No matches found</h3>
                     <p className="text-sm text-slate-600">
-                      Try a different search or add a new lipstick.
+                      Try a different search or clear filters.
                     </p>
                   </div>
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100"
+                    onClick={clearFilters}
+                  >
+                    Clear Filters
+                  </Button>
                 </CardContent>
               </Card>
             ) : (
@@ -917,31 +980,41 @@ export default function LipstickCatalogApp() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: index * 0.03 }}
                   >
-                    <Card className="rounded-3xl border shadow-sm">
-                      <CardContent className="p-5">
+                    <Card className="rounded-3xl border border-rose-100 shadow-sm transition-shadow hover:shadow-md">
+                      <CardContent className="p-4 md:p-5">
                         <div
-                          className="flex cursor-pointer items-center justify-between gap-4"
+                          className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                           onClick={() => toggleExpanded(item.id)}
                         >
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`h-3 w-3 rounded-full ${getColorDotClass(
+                                  item.colorFamily
+                                )}`}
+                              />
                               <h2 className="text-xl font-semibold">{item.shade}</h2>
                               <Badge className="rounded-full">{item.status}</Badge>
-                              <Badge variant="secondary" className="rounded-full">
+                              <Badge
+                                variant="outline"
+                                className={`rounded-full border ${ownershipBadgeClasses(
+                                  isOwnedByYou
+                                )}`}
+                              >
                                 {isOwnedByYou ? "Owned by you" : "Shared with you"}
                               </Badge>
                             </div>
-                            <p className="text-sm text-slate-600">{item.brand}</p>
+                            <p className="mt-1 text-sm text-slate-600">{item.brand}</p>
                           </div>
 
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 self-end sm:self-auto">
                             {isOwnedByYou ? (
                               <Button
                                 variant="outline"
-                                className="rounded-2xl"
+                                className="rounded-2xl border-rose-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  deleteOwnedLipstick(item.id);
+                                  void deleteOwnedLipstick(item.id);
                                 }}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -949,10 +1022,10 @@ export default function LipstickCatalogApp() {
                             ) : (
                               <Button
                                 variant="outline"
-                                className="rounded-2xl"
+                                className="rounded-2xl border-rose-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  removeSharedLipstick(item.id);
+                                  void removeSharedLipstick(item.id);
                                 }}
                               >
                                 <X className="mr-2 h-4 w-4" /> Remove
@@ -994,7 +1067,7 @@ export default function LipstickCatalogApp() {
                               </Badge>
                             </div>
 
-                            <div className="grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
+                            <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                               <div className="flex items-center gap-2">
                                 <Sparkles className="h-4 w-4" /> Best for: {item.occasion}
                               </div>
@@ -1008,12 +1081,12 @@ export default function LipstickCatalogApp() {
                             </div>
 
                             {isOwnedByYou ? (
-                              <div className="rounded-3xl border p-4">
+                              <div className="rounded-3xl border border-rose-100 p-4">
                                 <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
                                   <Share2 className="h-4 w-4" />
                                   Share this lipstick
                                 </h3>
-                                <div className="flex gap-2">
+                                <div className="flex flex-col gap-2 sm:flex-row">
                                   <Input
                                     value={shareEmails[item.id] ?? ""}
                                     onChange={(e) =>
@@ -1023,12 +1096,12 @@ export default function LipstickCatalogApp() {
                                       }))
                                     }
                                     placeholder="friend@example.com"
-                                    className="rounded-2xl"
+                                    className="rounded-2xl border-rose-100"
                                   />
                                   <Button
                                     variant="outline"
-                                    className="rounded-2xl"
-                                    onClick={() => shareLipstick(item.id)}
+                                    className="rounded-2xl border-rose-100"
+                                    onClick={() => void shareLipstick(item.id)}
                                   >
                                     Share
                                   </Button>
