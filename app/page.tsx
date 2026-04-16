@@ -52,7 +52,7 @@ type LipstickItem = {
   purchaseDate: string;
   occasion: string;
   notes: string;
-  favorite?: boolean;
+  favorite: boolean;
 };
 
 type ProfileRow = {
@@ -157,6 +157,8 @@ export default function LipstickCatalogApp() {
   const [items, setItems] = useState<LipstickItem[]>([]);
   const [shareRows, setShareRows] = useState<ShareRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [sharingLipstickId, setSharingLipstickId] = useState<number | null>(null);
 
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -201,9 +203,11 @@ export default function LipstickCatalogApp() {
 
   useEffect(() => {
     if (isAddFormOpen) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         brandInputRef.current?.focus();
       }, 150);
+
+      return () => clearTimeout(timer);
     }
   }, [isAddFormOpen]);
 
@@ -336,7 +340,7 @@ export default function LipstickCatalogApp() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const clearFilters = () => {
+  const clearFilters = (showToast = true) => {
     setQuery("");
     setTypeFilter("all");
     setFinishFilter("all");
@@ -347,7 +351,10 @@ export default function LipstickCatalogApp() {
     setFavoritesFilter("all");
     setSortBy("newest");
     setQuickTab("all");
-    showNotice("success", "Filters cleared.");
+
+    if (showToast) {
+      showNotice("success", "Filters cleared.");
+    }
   };
 
   const resetForm = () => {
@@ -388,7 +395,7 @@ export default function LipstickCatalogApp() {
     setIsAddFormOpen(false);
     setIsFiltersOpen(false);
     resetForm();
-    clearFilters();
+    clearFilters(false);
     await refreshDataOnly();
     showNotice("success", "Library refreshed.");
   };
@@ -439,16 +446,10 @@ export default function LipstickCatalogApp() {
       purchaseDate: item.purchase_date ?? "",
       occasion: item.occasion,
       notes: item.notes ?? "",
-      favorite: false,
+      favorite: item.favorite ?? false,
     }));
 
-    setItems((prev) => {
-      const favoritesMap = new Map(prev.map((item) => [item.id, !!item.favorite]));
-      return mapped.map((item) => ({
-        ...item,
-        favorite: favoritesMap.get(item.id) ?? false,
-      }));
-    });
+    setItems(mapped);
   }
 
   async function fetchShareRows() {
@@ -498,14 +499,18 @@ export default function LipstickCatalogApp() {
         await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
       }
 
+      setEmail(normalizedEmail);
+      setPassword("");
       setAuthMessage(
         "Account created. If email confirmation is enabled, check your inbox."
       );
       return;
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
+      email: normalizedEmail,
       password,
     });
 
@@ -515,10 +520,12 @@ export default function LipstickCatalogApp() {
     }
 
     if (data.user) {
-      await ensureProfileRow(data.user.id, data.user.email ?? email);
+      await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     }
 
+    setEmail(normalizedEmail);
+    setPassword("");
     setAuthMessage("Signed in.");
   }
 
@@ -556,10 +563,11 @@ export default function LipstickCatalogApp() {
     if (!session?.user?.id) return;
     if (!validateForm()) return;
 
-    const payload = {
-      owner_user_id: session.user.id,
-      brand: form.brand,
-      shade: form.shade,
+    setIsSaving(true);
+
+    const basePayload = {
+      brand: form.brand.trim(),
+      shade: form.shade.trim(),
       type: form.type,
       finish: form.finish,
       undertone: form.undertone,
@@ -567,14 +575,16 @@ export default function LipstickCatalogApp() {
       status: form.status,
       purchase_date: form.purchaseDate || todayString(),
       occasion: form.occasion,
-      notes: form.notes,
+      notes: form.notes.trim(),
     };
 
     if (isEditing && editingLipstickId !== null) {
       const { error } = await supabase
         .from("lipsticks")
-        .update(payload)
+        .update(basePayload)
         .eq("id", editingLipstickId);
+
+      setIsSaving(false);
 
       if (error) {
         console.error("Error updating lipstick:", error);
@@ -585,11 +595,22 @@ export default function LipstickCatalogApp() {
       resetForm();
       setIsAddFormOpen(false);
       await refreshDataOnly();
+      setExpandedItems((prev) =>
+        prev.includes(editingLipstickId) ? prev : [editingLipstickId, ...prev]
+      );
       showNotice("success", "Lipstick updated.");
       return;
     }
 
-    const { error } = await supabase.from("lipsticks").insert(payload);
+    const insertPayload = {
+      owner_user_id: session.user.id,
+      favorite: false,
+      ...basePayload,
+    };
+
+    const { error } = await supabase.from("lipsticks").insert(insertPayload);
+
+    setIsSaving(false);
 
     if (error) {
       console.error("Error saving lipstick:", error);
@@ -604,6 +625,9 @@ export default function LipstickCatalogApp() {
   };
 
   const deleteOwnedLipstick = async (id: number) => {
+    const confirmed = window.confirm("Are you sure you want to delete this lipstick?");
+    if (!confirmed) return;
+
     const { error } = await supabase.from("lipsticks").delete().eq("id", id);
 
     if (error) {
@@ -655,6 +679,8 @@ export default function LipstickCatalogApp() {
   };
 
   const shareLipstick = async (lipstickId: number) => {
+    if (!session?.user?.id || !session.user.email) return;
+
     const emailToShare = (shareEmails[lipstickId] ?? "").trim().toLowerCase();
 
     if (!emailToShare) {
@@ -665,10 +691,20 @@ export default function LipstickCatalogApp() {
       return;
     }
 
+    if (emailToShare === session.user.email.toLowerCase()) {
+      setShareMessages((prev) => ({
+        ...prev,
+        [lipstickId]: "You already own this lipstick.",
+      }));
+      return;
+    }
+
     setShareMessages((prev) => ({
       ...prev,
       [lipstickId]: "",
     }));
+
+    setSharingLipstickId(lipstickId);
 
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
@@ -677,9 +713,25 @@ export default function LipstickCatalogApp() {
       .single<ProfileRow>();
 
     if (profileError || !profile) {
+      setSharingLipstickId(null);
       setShareMessages((prev) => ({
         ...prev,
         [lipstickId]: "No user found with that email.",
+      }));
+      return;
+    }
+
+    const alreadyShared = shareRows.some(
+      (row) =>
+        row.lipstick_id === lipstickId &&
+        row.shared_with_user_id === profile.id
+    );
+
+    if (alreadyShared) {
+      setSharingLipstickId(null);
+      setShareMessages((prev) => ({
+        ...prev,
+        [lipstickId]: "This lipstick is already shared with that user.",
       }));
       return;
     }
@@ -688,6 +740,8 @@ export default function LipstickCatalogApp() {
       lipstick_id: lipstickId,
       shared_with_user_id: profile.id,
     });
+
+    setSharingLipstickId(null);
 
     if (shareError) {
       setShareMessages((prev) => ({
@@ -711,12 +765,35 @@ export default function LipstickCatalogApp() {
     showNotice("success", "Lipstick shared.");
   };
 
-  const toggleFavorite = (id: number) => {
+  const toggleFavorite = async (id: number) => {
+    const currentItem = items.find((item) => item.id === id);
+    if (!currentItem) return;
+
+    const nextFavorite = !currentItem.favorite;
+
     setItems((prev) =>
       prev.map((item) =>
-        item.id === id ? { ...item, favorite: !item.favorite } : item
+        item.id === id ? { ...item, favorite: nextFavorite } : item
       )
     );
+
+    const { error } = await supabase
+      .from("lipsticks")
+      .update({ favorite: nextFavorite })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error updating favorite:", error);
+
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, favorite: !nextFavorite } : item
+        )
+      );
+
+      showNotice("error", "Could not update favorite.");
+      return;
+    }
   };
 
   const visibleItems = useMemo(() => {
@@ -990,7 +1067,7 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant="outline"
                     className="rounded-2xl border-rose-100"
-                    onClick={clearFilters}
+                    onClick={() => clearFilters()}
                   >
                     <SlidersHorizontal className="mr-2 h-4 w-4" />
                     Clear
@@ -1221,7 +1298,10 @@ export default function LipstickCatalogApp() {
                         <div className="grid gap-4 sm:grid-cols-2">
                           <div className="space-y-2">
                             <Label>Type</Label>
-                            <Select value={form.type || undefined} onValueChange={(v) => updateForm("type", v)}>
+                            <Select
+                              value={form.type || undefined}
+                              onValueChange={(v) => updateForm("type", v)}
+                            >
                               <SelectTrigger className="rounded-2xl border-rose-100">
                                 <SelectValue placeholder="Select type" />
                               </SelectTrigger>
@@ -1356,23 +1436,25 @@ export default function LipstickCatalogApp() {
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
                           onClick={() => void saveLipstick()}
+                          disabled={isSaving}
                           className="w-full rounded-2xl sm:flex-1"
                         >
                           {isEditing ? (
                             <>
                               <Pencil className="mr-2 h-4 w-4" />
-                              Update Lipstick
+                              {isSaving ? "Updating..." : "Update Lipstick"}
                             </>
                           ) : (
                             <>
                               <Plus className="mr-2 h-4 w-4" />
-                              Save Lipstick
+                              {isSaving ? "Saving..." : "Save Lipstick"}
                             </>
                           )}
                         </Button>
                         <Button
                           variant="outline"
                           onClick={handleCancelForm}
+                          disabled={isSaving}
                           className="w-full rounded-2xl border-rose-100 sm:w-auto"
                         >
                           Cancel
@@ -1406,14 +1488,11 @@ export default function LipstickCatalogApp() {
                     <Button
                       variant="outline"
                       className="rounded-2xl border-rose-100"
-                      onClick={clearFilters}
+                      onClick={() => clearFilters()}
                     >
                       Clear Filters
                     </Button>
-                    <Button
-                      className="rounded-2xl"
-                      onClick={startAddLipstick}
-                    >
+                    <Button className="rounded-2xl" onClick={startAddLipstick}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add a lipstick
                     </Button>
@@ -1480,17 +1559,15 @@ export default function LipstickCatalogApp() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className={`rounded-full ${item.favorite ? "text-rose-500" : "text-slate-400"}`}
+                              className={`rounded-full ${
+                                item.favorite ? "text-rose-500" : "text-slate-400"
+                              }`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toggleFavorite(item.id);
+                                void toggleFavorite(item.id);
                               }}
                             >
-                              <Star
-                                className={`h-5 w-5 ${
-                                  item.favorite ? "fill-current" : ""
-                                }`}
-                              />
+                              <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
                             </Button>
 
                             {isOwnedByYou ? (
@@ -1582,11 +1659,11 @@ export default function LipstickCatalogApp() {
                                     <Sparkles className="h-4 w-4" /> Best for: {item.occasion}
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />{" "}
+                                    <Calendar className="h-4 w-4" />
                                     {item.purchaseDate || "No date added"}
                                   </div>
                                   <div className="flex items-center gap-2 sm:col-span-2">
-                                    <Tag className="h-4 w-4" />{" "}
+                                    <Tag className="h-4 w-4" />
                                     {item.notes || "No notes added yet."}
                                   </div>
                                 </div>
@@ -1625,9 +1702,10 @@ export default function LipstickCatalogApp() {
                                       <Button
                                         variant="outline"
                                         className="rounded-2xl border-rose-100"
+                                        disabled={sharingLipstickId === item.id}
                                         onClick={() => void shareLipstick(item.id)}
                                       >
-                                        Share
+                                        {sharingLipstickId === item.id ? "Sharing..." : "Share"}
                                       </Button>
                                     </div>
                                     {shareMessages[item.id] ? (
