@@ -53,6 +53,7 @@ type LipstickItem = {
   occasion: string;
   notes: string;
   favorite: boolean;
+  deletedAt: string | null;
 };
 
 type ProfileRow = {
@@ -169,7 +170,7 @@ export default function LipstickCatalogApp() {
   const [favoritesFilter, setFavoritesFilter] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [ownershipFilter, setOwnershipFilter] = useState("all");
-  const [quickTab, setQuickTab] = useState<"all" | "owned" | "shared">("all");
+  const [quickTab, setQuickTab] = useState<"all" | "owned" | "shared" | "trash">("all");
 
   const [form, setForm] = useState<LipstickFormValues>(emptyForm);
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
@@ -447,6 +448,7 @@ export default function LipstickCatalogApp() {
       occasion: item.occasion,
       notes: item.notes ?? "",
       favorite: item.favorite ?? false,
+      deletedAt: item.deleted_at ?? null,
     }));
 
     setItems(mapped);
@@ -472,6 +474,28 @@ export default function LipstickCatalogApp() {
     setLoading(true);
     await Promise.all([fetchLipsticks(), fetchShareRows()]);
     setLoading(false);
+  }
+
+  async function handleForgotPassword() {
+    setAuthMessage("");
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setAuthMessage("Please enter your email first.");
+      return;
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setAuthMessage(error.message);
+      return;
+    }
+
+    setAuthMessage("Password reset email sent. Check your inbox.");
   }
 
   async function handleAuth() {
@@ -613,26 +637,63 @@ export default function LipstickCatalogApp() {
   };
 
   const deleteOwnedLipstick = async (id: number) => {
-    const confirmed = window.confirm("Are you sure you want to delete this lipstick?");
+    const confirmed = window.confirm(
+      "Are you sure you want to move this lipstick to Trash?"
+    );
     if (!confirmed) return;
 
-    const { error } = await supabase.from("lipsticks").delete().eq("id", id);
+    const { error } = await supabase
+      .from("lipsticks")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", id);
 
     if (error) {
-      console.error("Error deleting lipstick:", error);
-      showNotice("error", "Could not delete lipstick.");
+      console.error("Error moving lipstick to trash:", error);
+      showNotice("error", "Could not move lipstick to Trash.");
       return;
     }
-
-    setItems((prev) => prev.filter((item) => item.id !== id));
-    setExpandedItems((prev) => prev.filter((itemId) => itemId !== id));
 
     if (editingLipstickId === id) {
       resetForm();
       setIsAddFormOpen(false);
     }
 
-    showNotice("success", "Lipstick deleted.");
+    await refreshDataOnly();
+    showNotice("success", "Lipstick moved to Trash.");
+  };
+
+  const restoreLipstick = async (id: number) => {
+    const { error } = await supabase
+      .from("lipsticks")
+      .update({ deleted_at: null })
+      .eq("id", id);
+
+    if (error) {
+      console.error("Error restoring lipstick:", error);
+      showNotice("error", "Could not restore lipstick.");
+      return;
+    }
+
+    await refreshDataOnly();
+    showNotice("success", "Lipstick restored.");
+  };
+
+  const permanentlyDeleteLipstick = async (id: number) => {
+    const confirmed = window.confirm(
+      "This will permanently delete the lipstick. This cannot be undone. Continue?"
+    );
+    if (!confirmed) return;
+
+    const { error } = await supabase.from("lipsticks").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error permanently deleting lipstick:", error);
+      showNotice("error", "Could not permanently delete lipstick.");
+      return;
+    }
+
+    await refreshDataOnly();
+    showNotice("success", "Lipstick permanently deleted.");
   };
 
   const removeSharedLipstick = async (lipstickId: number) => {
@@ -755,7 +816,7 @@ export default function LipstickCatalogApp() {
 
   const toggleFavorite = async (id: number) => {
     const currentItem = items.find((item) => item.id === id);
-    if (!currentItem) return;
+    if (!currentItem || currentItem.deletedAt) return;
 
     const nextFavorite = !currentItem.favorite;
 
@@ -800,6 +861,9 @@ export default function LipstickCatalogApp() {
 
       const isOwnedByYou = session?.user?.id === item.ownerUserId;
       const isSharedWithYou = session?.user?.id !== item.ownerUserId;
+      const isDeleted = !!item.deletedAt;
+
+      if (quickTab !== "trash" && isDeleted) return false;
 
       const matchesOwnership =
         ownershipFilter === "all" ||
@@ -807,9 +871,10 @@ export default function LipstickCatalogApp() {
         (ownershipFilter === "shared" && isSharedWithYou);
 
       const matchesQuickTab =
-        quickTab === "all" ||
-        (quickTab === "owned" && isOwnedByYou) ||
-        (quickTab === "shared" && isSharedWithYou);
+        (quickTab === "all" && !isDeleted) ||
+        (quickTab === "owned" && isOwnedByYou && !isDeleted) ||
+        (quickTab === "shared" && isSharedWithYou && !isDeleted) ||
+        (quickTab === "trash" && isOwnedByYou && isDeleted);
 
       const matchesFavorite =
         favoritesFilter === "all" ||
@@ -855,9 +920,16 @@ export default function LipstickCatalogApp() {
     session,
   ]);
 
-  const totalOwned = items.filter((x) => x.ownerUserId === session?.user?.id).length;
-  const totalShared = items.filter((x) => x.ownerUserId !== session?.user?.id).length;
-  const totalFavorites = items.filter((x) => x.favorite).length;
+  const totalOwned = items.filter(
+    (x) => x.ownerUserId === session?.user?.id && !x.deletedAt
+  ).length;
+  const totalShared = items.filter(
+    (x) => x.ownerUserId !== session?.user?.id && !x.deletedAt
+  ).length;
+  const totalFavorites = items.filter((x) => x.favorite && !x.deletedAt).length;
+  const totalTrash = items.filter(
+    (x) => x.ownerUserId === session?.user?.id && !!x.deletedAt
+  ).length;
 
   const ownershipBadgeClasses = (isOwnedByYou: boolean) =>
     isOwnedByYou
@@ -901,7 +973,19 @@ export default function LipstickCatalogApp() {
               </div>
 
               <div className="space-y-2">
-                <Label>Password</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Password</Label>
+                  {authMode === "signin" ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleForgotPassword()}
+                      className="text-sm font-medium text-rose-600 transition hover:text-rose-700"
+                    >
+                      Forgot password?
+                    </button>
+                  ) : null}
+                </div>
+
                 <Input
                   type="password"
                   value={password}
@@ -978,7 +1062,7 @@ export default function LipstickCatalogApp() {
                 <p className="text-sm text-slate-500">Signed in as {session.user.email}</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
                 <div className="rounded-2xl border border-rose-100 bg-rose-50/70 p-3">
                   <p className="text-xs uppercase tracking-wide text-slate-500">Owned</p>
                   <p className="mt-1 text-xl font-semibold">{totalOwned}</p>
@@ -994,9 +1078,15 @@ export default function LipstickCatalogApp() {
                     {totalFavorites}
                   </p>
                 </div>
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Trash</p>
+                  <p className="mt-1 text-xl font-semibold">{totalTrash}</p>
+                </div>
                 <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-3">
                   <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
-                  <p className="mt-1 text-xl font-semibold">{items.length}</p>
+                  <p className="mt-1 text-xl font-semibold">
+                    {items.filter((x) => !x.deletedAt).length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -1034,6 +1124,13 @@ export default function LipstickCatalogApp() {
                     onClick={() => setQuickTab("shared")}
                   >
                     Shared
+                  </Button>
+                  <Button
+                    variant={quickTab === "trash" ? "default" : "outline"}
+                    className="rounded-full"
+                    onClick={() => setQuickTab("trash")}
+                  >
+                    Trash
                   </Button>
                 </div>
 
@@ -1491,6 +1588,7 @@ export default function LipstickCatalogApp() {
               visibleItems.map((item, index) => {
                 const isOwnedByYou = session.user.id === item.ownerUserId;
                 const isExpanded = expandedItems.includes(item.id);
+                const isDeleted = !!item.deletedAt;
                 const colorData = getColorData(item.colorFamily);
 
                 return (
@@ -1515,7 +1613,7 @@ export default function LipstickCatalogApp() {
                               />
                               <h2 className="text-2xl font-semibold tracking-tight">{item.shade}</h2>
 
-                              <Badge className="rounded-full">{item.status}</Badge>
+                              <Badge className="rounded-full">{item.status || "No status"}</Badge>
 
                               <Badge
                                 variant="outline"
@@ -1526,20 +1624,39 @@ export default function LipstickCatalogApp() {
                                 {isOwnedByYou ? "In your collection" : "Shared with you"}
                               </Badge>
 
-                              <Badge
-                                variant="secondary"
-                                className={`rounded-full ${colorData.label}`}
-                              >
-                                {item.finish}
-                              </Badge>
+                              {isDeleted ? (
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                >
+                                  In Trash
+                                </Badge>
+                              ) : null}
+
+                              {item.finish ? (
+                                <Badge
+                                  variant="secondary"
+                                  className={`rounded-full ${colorData.label}`}
+                                >
+                                  {item.finish}
+                                </Badge>
+                              ) : null}
                             </div>
 
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                               <span>{item.brand}</span>
-                              <span className="text-slate-300">•</span>
-                              <span>{item.colorFamily}</span>
-                              <span className="text-slate-300">•</span>
-                              <span>{item.undertone}</span>
+                              {item.colorFamily ? (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span>{item.colorFamily}</span>
+                                </>
+                              ) : null}
+                              {item.undertone ? (
+                                <>
+                                  <span className="text-slate-300">•</span>
+                                  <span>{item.undertone}</span>
+                                </>
+                              ) : null}
                             </div>
                           </div>
 
@@ -1547,6 +1664,7 @@ export default function LipstickCatalogApp() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              disabled={isDeleted}
                               className={`rounded-full ${
                                 item.favorite ? "text-rose-500" : "text-slate-400"
                               }`}
@@ -1559,29 +1677,55 @@ export default function LipstickCatalogApp() {
                             </Button>
 
                             {isOwnedByYou ? (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/70"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startEditLipstick(item);
-                                  }}
-                                >
-                                  <Pencil className="mr-2 h-4 w-4" /> Edit
-                                </Button>
+                              isDeleted ? (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-2xl border-rose-100 bg-white/70"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void restoreLipstick(item.id);
+                                    }}
+                                  >
+                                    <RotateCcw className="mr-2 h-4 w-4" /> Restore
+                                  </Button>
 
-                                <Button
-                                  variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/70"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void deleteOwnedLipstick(item.id);
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                </Button>
-                              </>
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-2xl border-rose-100 bg-white/70"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void permanentlyDeleteLipstick(item.id);
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Forever
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-2xl border-rose-100 bg-white/70"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEditLipstick(item);
+                                    }}
+                                  >
+                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                  </Button>
+
+                                  <Button
+                                    variant="outline"
+                                    className="rounded-2xl border-rose-100 bg-white/70"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      void deleteOwnedLipstick(item.id);
+                                    }}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" /> Move to Trash
+                                  </Button>
+                                </>
+                              )
                             ) : (
                               <Button
                                 variant="outline"
@@ -1623,18 +1767,26 @@ export default function LipstickCatalogApp() {
                             >
                               <div className="mt-5 space-y-4">
                                 <div className="flex flex-wrap gap-2">
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.type}
-                                  </Badge>
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.finish}
-                                  </Badge>
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.undertone}
-                                  </Badge>
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.colorFamily}
-                                  </Badge>
+                                  {item.type ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.type}
+                                    </Badge>
+                                  ) : null}
+                                  {item.finish ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.finish}
+                                    </Badge>
+                                  ) : null}
+                                  {item.undertone ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.undertone}
+                                    </Badge>
+                                  ) : null}
+                                  {item.colorFamily ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.colorFamily}
+                                    </Badge>
+                                  ) : null}
                                   {item.favorite ? (
                                     <Badge variant="secondary" className="rounded-full">
                                       Favorite
@@ -1644,7 +1796,8 @@ export default function LipstickCatalogApp() {
 
                                 <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
                                   <div className="flex items-center gap-2">
-                                    <Sparkles className="h-4 w-4" /> Best for: {item.occasion}
+                                    <Sparkles className="h-4 w-4" /> Best for:{" "}
+                                    {item.occasion || "Not added"}
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
@@ -1658,18 +1811,22 @@ export default function LipstickCatalogApp() {
 
                                 <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
                                   <p className="text-sm font-medium text-slate-700">
-                                    {isOwnedByYou
+                                    {isDeleted
+                                      ? "This lipstick is in Trash."
+                                      : isOwnedByYou
                                       ? "You own this lipstick."
                                       : "This lipstick was shared with you."}
                                   </p>
                                   <p className="mt-1 text-sm text-slate-600">
-                                    {isOwnedByYou
-                                      ? "You can edit, delete, favorite, and share it with someone else."
+                                    {isDeleted
+                                      ? "You can restore it or permanently delete it."
+                                      : isOwnedByYou
+                                      ? "You can edit, move it to Trash, favorite, and share it with someone else."
                                       : "You can keep it in your list or remove it from your view."}
                                   </p>
                                 </div>
 
-                                {isOwnedByYou ? (
+                                {isOwnedByYou && !isDeleted ? (
                                   <div className="rounded-3xl border border-rose-100 bg-white/70 p-4">
                                     <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
                                       <Share2 className="h-4 w-4" />
