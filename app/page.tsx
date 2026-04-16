@@ -194,6 +194,9 @@ export default function LipstickCatalogApp() {
     null
   );
 
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [pendingSave, setPendingSave] = useState<(() => Promise<void>) | null>(null);
+
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
@@ -534,7 +537,7 @@ export default function LipstickCatalogApp() {
       purchaseDate: item.purchaseDate,
       occasion: item.occasion,
       notes: item.notes,
-      barcode: item.barcode ?? "",
+      barcode: item.barcode,
     });
     setEditingLipstickId(item.id);
     setIsAddFormOpen(true);
@@ -799,9 +802,8 @@ export default function LipstickCatalogApp() {
     return true;
   };
 
-  const saveLipstick = async () => {
+  const performSave = async () => {
     if (!session?.user?.id) return;
-    if (!validateForm()) return;
 
     setIsSaving(true);
 
@@ -863,6 +865,42 @@ export default function LipstickCatalogApp() {
     setIsAddFormOpen(false);
     await refreshDataOnly();
     showNotice("success", "Lipstick added.");
+  };
+
+  const saveLipstick = async () => {
+    if (!session?.user?.id) return;
+    if (!validateForm()) return;
+
+    const normalizedShade = form.shade.trim();
+    const normalizedBrand = form.brand.trim();
+
+    let query = supabase
+      .from("lipsticks")
+      .select("id, brand, shade")
+      .ilike("shade", normalizedShade)
+      .ilike("brand", normalizedBrand)
+      .is("deleted_at", null)
+      .limit(1);
+
+    if (editingLipstickId !== null) {
+      query = query.neq("id", editingLipstickId);
+    }
+
+    const { data: duplicate, error } = await query.maybeSingle();
+
+    if (error) {
+      console.error("Error checking duplicate lipstick:", error);
+      showNotice("error", "Could not check for duplicates.");
+      return;
+    }
+
+    if (duplicate) {
+      setShowDuplicateDialog(true);
+      setPendingSave(() => performSave);
+      return;
+    }
+
+    await performSave();
   };
 
   const deleteOwnedLipstick = async (id: number) => {
@@ -1266,6 +1304,43 @@ export default function LipstickCatalogApp() {
           onDetected={handleBarcodeDetected}
         />
         <AnimatePresence>
+          {showDuplicateDialog ? (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4">
+              <div className="w-full max-w-md rounded-2xl border border-rose-100 bg-white p-6 shadow-lg">
+                <h3 className="text-lg font-semibold">Duplicate detected</h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  A lipstick with the same brand and shade already exists in your library.
+                  Do you still want to add it?
+                </p>
+
+                <div className="mt-4 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100"
+                    onClick={() => {
+                      setShowDuplicateDialog(false);
+                      setPendingSave(null);
+                    }}
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    className="rounded-2xl"
+                    onClick={async () => {
+                      setShowDuplicateDialog(false);
+                      if (pendingSave) {
+                        await pendingSave();
+                      }
+                      setPendingSave(null);
+                    }}
+                  >
+                    Continue
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {notice ? (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
