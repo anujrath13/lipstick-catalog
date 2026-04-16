@@ -60,6 +60,7 @@ type ShareRow = {
 };
 
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
@@ -152,15 +153,52 @@ export default function LipstickCatalogApp() {
       return;
     }
 
-    const resetInactivityTimer = () => {
+    const updateLastActivity = () => {
+      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+    };
+
+    const checkInactivity = async () => {
+      const lastActivityRaw = localStorage.getItem(LAST_ACTIVITY_KEY);
+      const lastActivity = lastActivityRaw ? Number(lastActivityRaw) : Date.now();
+      const now = Date.now();
+
+      if (now - lastActivity >= INACTIVITY_TIMEOUT_MS) {
+        if (inactivityTimeoutRef.current) {
+          clearTimeout(inactivityTimeoutRef.current);
+          inactivityTimeoutRef.current = null;
+        }
+        await supabase.auth.signOut();
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+        setAuthMessage("You were logged out after 10 minutes of inactivity.");
+        return;
+      }
+
+      const remainingTime = INACTIVITY_TIMEOUT_MS - (now - lastActivity);
+
       if (inactivityTimeoutRef.current) {
         clearTimeout(inactivityTimeoutRef.current);
       }
 
       inactivityTimeoutRef.current = setTimeout(async () => {
         await supabase.auth.signOut();
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
         setAuthMessage("You were logged out after 10 minutes of inactivity.");
-      }, INACTIVITY_TIMEOUT_MS);
+      }, remainingTime);
+    };
+
+    const handleActivity = () => {
+      updateLastActivity();
+      void checkInactivity();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        void checkInactivity();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      void checkInactivity();
     };
 
     const activityEvents: Array<keyof WindowEventMap> = [
@@ -172,11 +210,18 @@ export default function LipstickCatalogApp() {
       "click",
     ];
 
+    if (!localStorage.getItem(LAST_ACTIVITY_KEY)) {
+      updateLastActivity();
+    }
+
     activityEvents.forEach((eventName) => {
-      window.addEventListener(eventName, resetInactivityTimer, { passive: true });
+      window.addEventListener(eventName, handleActivity, { passive: true });
     });
 
-    resetInactivityTimer();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    void checkInactivity();
 
     return () => {
       if (inactivityTimeoutRef.current) {
@@ -185,8 +230,11 @@ export default function LipstickCatalogApp() {
       }
 
       activityEvents.forEach((eventName) => {
-        window.removeEventListener(eventName, resetInactivityTimer);
+        window.removeEventListener(eventName, handleActivity);
       });
+
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
     };
   }, [session]);
 
@@ -345,6 +393,7 @@ export default function LipstickCatalogApp() {
 
     if (data.user) {
       await ensureProfileRow(data.user.id, data.user.email ?? email);
+      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     }
 
     setAuthMessage("Signed in.");
@@ -355,6 +404,7 @@ export default function LipstickCatalogApp() {
       clearTimeout(inactivityTimeoutRef.current);
       inactivityTimeoutRef.current = null;
     }
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     await supabase.auth.signOut();
   }
 
@@ -630,11 +680,11 @@ export default function LipstickCatalogApp() {
                 <Button
                   variant="outline"
                   className="rounded-2xl"
-                  onClick={handleRefreshView}
+                  onClick={() => void handleRefreshView()}
                 >
                   <RotateCcw className="mr-2 h-4 w-4" /> Refresh
                 </Button>
-                <Button variant="outline" className="rounded-2xl" onClick={handleSignOut}>
+                <Button variant="outline" className="rounded-2xl" onClick={() => void handleSignOut()}>
                   <LogOut className="mr-2 h-4 w-4" /> Sign Out
                 </Button>
               </div>
@@ -928,7 +978,7 @@ export default function LipstickCatalogApp() {
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">
-                    <Button onClick={addLipstick} className="w-full rounded-2xl sm:flex-1">
+                    <Button onClick={() => void addLipstick()} className="w-full rounded-2xl sm:flex-1">
                       <Plus className="mr-2 h-4 w-4" /> Save Lipstick
                     </Button>
                     <Button
