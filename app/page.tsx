@@ -59,8 +59,8 @@ type LipstickItem = {
   favorite: boolean;
   deletedAt: string | null;
   barcode: string;
-  imageUrl1: string;
-  imageUrl2: string;
+  image_url_1: string | null;
+  image_url_2: string | null;
 };
 
 type ProfileRow = {
@@ -86,8 +86,8 @@ type LipstickFormValues = {
   occasion: string;
   notes: string;
   barcode: string;
-  imageUrl1: string;
-  imageUrl2: string;
+  image_url_1: string;
+  image_url_2: string;
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
@@ -107,8 +107,8 @@ const emptyForm: LipstickFormValues = {
   occasion: "",
   notes: "",
   barcode: "",
-  imageUrl1: "",
-  imageUrl2: "",
+  image_url_1: "",
+  image_url_2: "",
 };
 
 const colorFamilyMap: Record<
@@ -450,8 +450,8 @@ export default function LipstickCatalogApp() {
         occasion: normalizeScannedValue(scanned.occasion),
         notes: normalizeScannedValue(scanned.notes),
         barcode: normalizeScannedValue(scanned.barcode),
-        imageUrl1: "",
-        imageUrl2: "",
+        image_url_1: "",
+        image_url_2: "",
       });
 
       showNotice("success", "Lipstick scanned. Review and save.");
@@ -645,8 +645,8 @@ export default function LipstickCatalogApp() {
       occasion: item.occasion,
       notes: item.notes,
       barcode: item.barcode,
-      imageUrl1: item.imageUrl1,
-      imageUrl2: item.imageUrl2,
+      image_url_1: item.image_url_1 ?? "",
+      image_url_2: item.image_url_2 ?? "",
     });
     setEditingLipstickId(item.id);
     setIsAddFormOpen(true);
@@ -789,8 +789,8 @@ export default function LipstickCatalogApp() {
       favorite: item.favorite ?? false,
       deletedAt: item.deleted_at ?? null,
       barcode: item.barcode ?? "",
-      imageUrl1: item.image_url_1 ?? "",
-      imageUrl2: item.image_url_2 ?? "",
+      image_url_1: item.image_url_1 ?? "",
+      image_url_2: item.image_url_2 ?? "",
     }));
 
     setItems(mapped);
@@ -919,15 +919,15 @@ export default function LipstickCatalogApp() {
     setIsSaving(true);
 
     try {
-      let imageUrl1 = form.imageUrl1 || "";
-      let imageUrl2 = form.imageUrl2 || "";
+      let image_url_1 = form.image_url_1 || "";
+      let image_url_2 = form.image_url_2 || "";
 
       if (imageFile1) {
-        imageUrl1 = await uploadLipstickImage(imageFile1);
+        image_url_1 = await uploadLipstickImage(imageFile1);
       }
 
       if (imageFile2) {
-        imageUrl2 = await uploadLipstickImage(imageFile2);
+        image_url_2 = await uploadLipstickImage(imageFile2);
       }
 
       const basePayload = {
@@ -942,8 +942,8 @@ export default function LipstickCatalogApp() {
         occasion: form.occasion,
         notes: form.notes.trim(),
         barcode: form.barcode.trim() || null,
-        image_url_1: imageUrl1 || null,
-        image_url_2: imageUrl2 || null,
+        image_url_1: image_url_1 || null,
+        image_url_2: image_url_2 || null,
       };
 
       if (isEditing && editingLipstickId !== null) {
@@ -1491,6 +1491,32 @@ export default function LipstickCatalogApp() {
           ) : null}
         </AnimatePresence>
 
+        {previewImageUrl ? (
+          <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 px-4"
+            onClick={() => setPreviewImageUrl(null)}
+          >
+            <div
+              className="relative max-h-[90vh] max-w-[90vw]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => setPreviewImageUrl(null)}
+                className="absolute right-2 top-2 rounded-full bg-white/90 px-3 py-1 text-sm font-medium text-slate-700 shadow"
+              >
+                Close
+              </button>
+
+              <img
+                src={previewImageUrl}
+                alt="Lipstick full preview"
+                className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
+              />
+            </div>
+          </div>
+        ) : null}
+
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -1993,7 +2019,7 @@ export default function LipstickCatalogApp() {
                               onChange={(e) => setImageFile1(e.target.files?.[0] ?? null)}
                               className="rounded-2xl border-rose-100"
                             />
-                            {form.imageUrl1 ? (
+                            {form.image_url_1 ? (
                               <p className="text-xs text-slate-500">Existing photo saved</p>
                             ) : null}
                             {imageFile1 ? (
@@ -2009,7 +2035,7 @@ export default function LipstickCatalogApp() {
                               onChange={(e) => setImageFile2(e.target.files?.[0] ?? null)}
                               className="rounded-2xl border-rose-100"
                             />
-                            {form.imageUrl2 ? (
+                            {form.image_url_2 ? (
                               <p className="text-xs text-slate-500">Existing photo saved</p>
                             ) : null}
                             {imageFile2 ? (
@@ -2130,6 +2156,7 @@ export default function LipstickCatalogApp() {
                           onClick={() => toggleExpanded(item.id)}
                         >
                           <div className="min-w-0">
+
 
                             <div className="flex flex-wrap items-center gap-2">
                               <span
@@ -2288,139 +2315,176 @@ export default function LipstickCatalogApp() {
                               exit={{ opacity: 0, height: 0 }}
                               className="overflow-hidden"
                             >
-                              <div className="mt-5 space-y-4">
-                                <div className="flex flex-wrap gap-2">
-                                  {item.type ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.type}
-                                    </Badge>
+
+                              {item.image_url_1 || item.image_url_2 ? (
+                                <div className="flex flex-wrap gap-3">
+                                  {item.image_url_1 ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewImageUrl(item.image_url_1);
+                                      }}
+                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                    >
+                                      <img
+                                        src={item.image_url_1}
+                                        alt="Lipstick photo 1"
+                                        className="h-24 w-24 object-cover"
+                                      />
+                                    </button>
                                   ) : null}
-                                  {item.finish ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.finish}
-                                    </Badge>
-                                  ) : null}
-                                  {item.undertone ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.undertone}
-                                    </Badge>
-                                  ) : null}
-                                  {item.colorFamily ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.colorFamily}
-                                    </Badge>
-                                  ) : null}
-                                  {item.favorite ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      Favorite
-                                    </Badge>
+
+                                  {item.image_url_2 ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewImageUrl(item.image_url_2);
+                                      }}
+                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                    >
+                                      <img
+                                        src={item.image_url_2}
+                                        alt="Lipstick photo 2"
+                                        className="h-24 w-24 object-cover"
+                                      />
+                                    </button>
                                   ) : null}
                                 </div>
+                              ) : null}
+                              <div className="flex flex-wrap gap-2">
+                                {item.type ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.type}
+                                  </Badge>
+                                ) : null}
+                                {item.finish ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.finish}
+                                  </Badge>
+                                ) : null}
+                                {item.undertone ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.undertone}
+                                  </Badge>
+                                ) : null}
+                                {item.colorFamily ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.colorFamily}
+                                  </Badge>
+                                ) : null}
+                                {item.favorite ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    Favorite
+                                  </Badge>
+                                ) : null}
+                              </div>
 
-                                <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles className="h-4 w-4" /> Best for:{" "}
-                                    {item.occasion || "Not added"}
-                                  </div>
+                              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4" /> Best for:{" "}
+                                  {item.occasion || "Not added"}
+                                </div>
 
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    {item.purchaseDate || "No date added"}
-                                  </div>
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  {item.purchaseDate || "No date added"}
+                                </div>
 
+                                <div className="mt-5 space-y-4">
+                                  <Tag className="h-4 w-4" />
+                                  {item.notes || "No notes added yet."}
+                                </div>
+
+                                {item.barcode ? (
                                   <div className="flex items-center gap-2 sm:col-span-2">
                                     <Tag className="h-4 w-4" />
-                                    {item.notes || "No notes added yet."}
-                                  </div>
-
-                                  {item.barcode ? (
-                                    <div className="flex items-center gap-2 sm:col-span-2">
-                                      <Tag className="h-4 w-4" />
-                                      Barcode: {item.barcode}
-                                    </div>
-                                  ) : null}
-                                </div>
-
-                                <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
-                                  <p className="text-sm font-medium text-slate-700">
-                                    {isDeleted
-                                      ? "This lipstick is in Trash."
-                                      : isOwnedByYou
-                                        ? "You own this lipstick."
-                                        : "This lipstick was shared with you."}
-                                  </p>
-
-                                  <p className="mt-1 text-sm text-slate-600">
-                                    {isDeleted
-                                      ? "You can restore it or permanently delete it."
-                                      : isOwnedByYou
-                                        ? "You can edit, move it to Trash, favorite, and share it with someone else."
-                                        : "You can keep it in your list or remove it from your view."}
-                                  </p>
-
-                                  {isDeleted && deletedDaysAgo !== null ? (
-                                    <p className="mt-2 text-sm text-slate-600">
-                                      Deleted {deletedDaysAgo} day
-                                      {deletedDaysAgo === 1 ? "" : "s"} ago.
-                                    </p>
-                                  ) : null}
-
-                                  {isDeleted && daysRemaining !== null ? (
-                                    <p className="mt-1 text-sm text-slate-600">
-                                      {daysRemaining} day
-                                      {daysRemaining === 1 ? "" : "s"} remaining before
-                                      permanent cleanup.
-                                    </p>
-                                  ) : null}
-                                </div>
-
-                                {isOwnedByYou && !isDeleted ? (
-                                  <div className="rounded-3xl border border-rose-100 bg-white/70 p-4">
-                                    <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
-                                      <Share2 className="h-4 w-4" />
-                                      Share this lipstick
-                                    </h3>
-                                    <div className="flex flex-col gap-2 sm:flex-row">
-                                      <Input
-                                        value={shareEmails[item.id] ?? ""}
-                                        onChange={(e) =>
-                                          setShareEmails((prev) => ({
-                                            ...prev,
-                                            [item.id]: e.target.value,
-                                          }))
-                                        }
-                                        placeholder="friend@example.com"
-                                        className="rounded-2xl border-rose-100"
-                                      />
-                                      <Button
-                                        variant="outline"
-                                        className="rounded-2xl border-rose-100"
-                                        disabled={sharingLipstickId === item.id}
-                                        onClick={() => void shareLipstick(item.id)}
-                                      >
-                                        {sharingLipstickId === item.id ? "Sharing..." : "Share"}
-                                      </Button>
-                                    </div>
-                                    {shareMessages[item.id] ? (
-                                      <p className="mt-2 text-sm text-slate-600">
-                                        {shareMessages[item.id]}
-                                      </p>
-                                    ) : null}
+                                    Barcode: {item.barcode}
                                   </div>
                                 ) : null}
                               </div>
+
+                              <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
+                                <p className="text-sm font-medium text-slate-700">
+                                  {isDeleted
+                                    ? "This lipstick is in Trash."
+                                    : isOwnedByYou
+                                      ? "You own this lipstick."
+                                      : "This lipstick was shared with you."}
+                                </p>
+
+                                <p className="mt-1 text-sm text-slate-600">
+                                  {isDeleted
+                                    ? "You can restore it or permanently delete it."
+                                    : isOwnedByYou
+                                      ? "You can edit, move it to Trash, favorite, and share it with someone else."
+                                      : "You can keep it in your list or remove it from your view."}
+                                </p>
+
+                                {isDeleted && deletedDaysAgo !== null ? (
+                                  <p className="mt-2 text-sm text-slate-600">
+                                    Deleted {deletedDaysAgo} day
+                                    {deletedDaysAgo === 1 ? "" : "s"} ago.
+                                  </p>
+                                ) : null}
+
+                                {isDeleted && daysRemaining !== null ? (
+                                  <p className="mt-1 text-sm text-slate-600">
+                                    {daysRemaining} day
+                                    {daysRemaining === 1 ? "" : "s"} remaining before
+                                    permanent cleanup.
+                                  </p>
+                                ) : null}
+                              </div>
+
+                              {isOwnedByYou && !isDeleted ? (
+                                <div className="rounded-3xl border border-rose-100 bg-white/70 p-4">
+                                  <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
+                                    <Share2 className="h-4 w-4" />
+                                    Share this lipstick
+                                  </h3>
+                                  <div className="flex flex-col gap-2 sm:flex-row">
+                                    <Input
+                                      value={shareEmails[item.id] ?? ""}
+                                      onChange={(e) =>
+                                        setShareEmails((prev) => ({
+                                          ...prev,
+                                          [item.id]: e.target.value,
+                                        }))
+                                      }
+                                      placeholder="friend@example.com"
+                                      className="rounded-2xl border-rose-100"
+                                    />
+                                    <Button
+                                      variant="outline"
+                                      className="rounded-2xl border-rose-100"
+                                      disabled={sharingLipstickId === item.id}
+                                      onClick={() => void shareLipstick(item.id)}
+                                    >
+                                      {sharingLipstickId === item.id ? "Sharing..." : "Share"}
+                                    </Button>
+                                  </div>
+                                  {shareMessages[item.id] ? (
+                                    <p className="mt-2 text-sm text-slate-600">
+                                      {shareMessages[item.id]}
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : null}
+                            </div>
                             </motion.div>
                           ) : null}
-                        </AnimatePresence>
-                      </CardContent>
-                    </Card>
+                      </AnimatePresence>
+                    </CardContent>
+                  </Card>
                   </motion.div>
-                );
+          );
               })
             )}
-          </div>
         </div>
       </div>
     </div>
+    </div >
   );
 }
