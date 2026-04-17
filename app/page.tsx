@@ -1446,9 +1446,9 @@ export default function LipstickCatalogApp() {
     session,
   ]);
 
-      const compareItems = items.filter((item) => compareIds.includes(item.id));
-    const compareItem1 = compareItems[0] ?? null;
-    const compareItem2 = compareItems[1] ?? null;
+  const compareItems = items.filter((item) => compareIds.includes(item.id));
+  const compareItem1 = compareItems[0] ?? null;
+  const compareItem2 = compareItems[1] ?? null;
 
   const totalOwned = items.filter(
     (x) => x.ownerUserId === session?.user?.id && !x.deletedAt
@@ -1460,6 +1460,33 @@ export default function LipstickCatalogApp() {
   const totalTrash = items.filter(
     (x) => x.ownerUserId === session?.user?.id && !!x.deletedAt
   ).length;
+
+  const activeItems = items.filter((item) => !item.deletedAt);
+
+  const totalActive = activeItems.length;
+
+  const totalWishlist = activeItems.filter((item) => item.status === "Wishlist").length;
+
+  const favoritesPercent =
+    totalActive > 0 ? Math.round((totalFavorites / totalActive) * 100) : 0;
+
+  const colorFamilyCounts = activeItems.reduce<Record<string, number>>((acc, item) => {
+    const key = item.colorFamily?.trim() || "Unspecified";
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const finishCounts = activeItems.reduce<Record<string, number>>((acc, item) => {
+    const key = item.finish?.trim() || "Unspecified";
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const colorFamilyStats = Object.entries(colorFamilyCounts)
+    .sort((a, b) => b[1] - a[1]);
+
+  const finishStats = Object.entries(finishCounts)
+    .sort((a, b) => b[1] - a[1]);
 
   const ownershipBadgeClasses = (isOwnedByYou: boolean) =>
     isOwnedByYou
@@ -1644,105 +1671,105 @@ export default function LipstickCatalogApp() {
             </div>
           </div>
         ) : null}
-        
+
         {isCompareOpen && compareItem1 && compareItem2 ? (
-  <div
-    className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4"
-    onClick={() => setIsCompareOpen(false)}
-  >
-    <div
-      className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-white p-4 md:p-6"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-2xl font-semibold">Compare Lipsticks</h2>
-        <Button
-          variant="outline"
-          className="rounded-2xl border-rose-100"
-          onClick={() => setIsCompareOpen(false)}
-        >
-          Close
-        </Button>
-      </div>
+          <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4"
+            onClick={() => setIsCompareOpen(false)}
+          >
+            <div
+              className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-white p-4 md:p-6"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Compare Lipsticks</h2>
+                <Button
+                  variant="outline"
+                  className="rounded-2xl border-rose-100"
+                  onClick={() => setIsCompareOpen(false)}
+                >
+                  Close
+                </Button>
+              </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-rose-100 p-4">
-          <h3 className="text-xl font-semibold">{compareItem1.shade}</h3>
-          <p className="text-sm text-slate-600">{compareItem1.brand}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-3xl border border-rose-100 p-4">
+                  <h3 className="text-xl font-semibold">{compareItem1.shade}</h3>
+                  <p className="text-sm text-slate-600">{compareItem1.brand}</p>
 
-          {compareItem1.image_url_1 || compareItem1.image_url_2 ? (
-            <div className="mt-4 flex flex-wrap gap-3">
-              {compareItem1.image_url_1 ? (
-                <img
-                  src={compareItem1.image_url_1}
-                  alt="Compare lipstick 1 photo 1"
-                  className="h-24 w-24 rounded-2xl object-cover"
-                />
-              ) : null}
+                  {compareItem1.image_url_1 || compareItem1.image_url_2 ? (
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      {compareItem1.image_url_1 ? (
+                        <img
+                          src={compareItem1.image_url_1}
+                          alt="Compare lipstick 1 photo 1"
+                          className="h-24 w-24 rounded-2xl object-cover"
+                        />
+                      ) : null}
 
-              {compareItem1.image_url_2 ? (
-                <img
-                  src={compareItem1.image_url_2}
-                  alt="Compare lipstick 1 photo 2"
-                  className="h-24 w-24 rounded-2xl object-cover"
-                />
-              ) : null}
+                      {compareItem1.image_url_2 ? (
+                        <img
+                          src={compareItem1.image_url_2}
+                          alt="Compare lipstick 1 photo 2"
+                          className="h-24 w-24 rounded-2xl object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 space-y-3 text-sm">
+                    <div><span className="font-medium">Type:</span> {compareItem1.type || "—"}</div>
+                    <div><span className="font-medium">Finish:</span> {compareItem1.finish || "—"}</div>
+                    <div><span className="font-medium">Undertone:</span> {compareItem1.undertone || "—"}</div>
+                    <div><span className="font-medium">Color Family:</span> {compareItem1.colorFamily || "—"}</div>
+                    <div><span className="font-medium">Status:</span> {compareItem1.status || "—"}</div>
+                    <div><span className="font-medium">Purchase Date:</span> {compareItem1.purchaseDate || "—"}</div>
+                    <div><span className="font-medium">Occasion:</span> {compareItem1.occasion || "—"}</div>
+                    <div><span className="font-medium">Favorite:</span> {compareItem1.favorite ? "Yes" : "No"}</div>
+                    <div><span className="font-medium">Notes:</span> {compareItem1.notes || "—"}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-3xl border border-rose-100 p-4">
+                  <h3 className="text-xl font-semibold">{compareItem2.shade}</h3>
+                  <p className="text-sm text-slate-600">{compareItem2.brand}</p>
+
+                  {compareItem2.image_url_1 || compareItem2.image_url_2 ? (
+                    <div className="mt-4 flex flex-wrap gap-3">
+                      {compareItem2.image_url_1 ? (
+                        <img
+                          src={compareItem2.image_url_1}
+                          alt="Compare lipstick 2 photo 1"
+                          className="h-24 w-24 rounded-2xl object-cover"
+                        />
+                      ) : null}
+
+                      {compareItem2.image_url_2 ? (
+                        <img
+                          src={compareItem2.image_url_2}
+                          alt="Compare lipstick 2 photo 2"
+                          className="h-24 w-24 rounded-2xl object-cover"
+                        />
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 space-y-3 text-sm">
+                    <div><span className="font-medium">Type:</span> {compareItem2.type || "—"}</div>
+                    <div><span className="font-medium">Finish:</span> {compareItem2.finish || "—"}</div>
+                    <div><span className="font-medium">Undertone:</span> {compareItem2.undertone || "—"}</div>
+                    <div><span className="font-medium">Color Family:</span> {compareItem2.colorFamily || "—"}</div>
+                    <div><span className="font-medium">Status:</span> {compareItem2.status || "—"}</div>
+                    <div><span className="font-medium">Purchase Date:</span> {compareItem2.purchaseDate || "—"}</div>
+                    <div><span className="font-medium">Occasion:</span> {compareItem2.occasion || "—"}</div>
+                    <div><span className="font-medium">Favorite:</span> {compareItem2.favorite ? "Yes" : "No"}</div>
+                    <div><span className="font-medium">Notes:</span> {compareItem2.notes || "—"}</div>
+                  </div>
+                </div>
+              </div>
             </div>
-          ) : null}
-
-          <div className="mt-4 space-y-3 text-sm">
-            <div><span className="font-medium">Type:</span> {compareItem1.type || "—"}</div>
-            <div><span className="font-medium">Finish:</span> {compareItem1.finish || "—"}</div>
-            <div><span className="font-medium">Undertone:</span> {compareItem1.undertone || "—"}</div>
-            <div><span className="font-medium">Color Family:</span> {compareItem1.colorFamily || "—"}</div>
-            <div><span className="font-medium">Status:</span> {compareItem1.status || "—"}</div>
-            <div><span className="font-medium">Purchase Date:</span> {compareItem1.purchaseDate || "—"}</div>
-            <div><span className="font-medium">Occasion:</span> {compareItem1.occasion || "—"}</div>
-            <div><span className="font-medium">Favorite:</span> {compareItem1.favorite ? "Yes" : "No"}</div>
-            <div><span className="font-medium">Notes:</span> {compareItem1.notes || "—"}</div>
           </div>
-        </div>
-
-        <div className="rounded-3xl border border-rose-100 p-4">
-          <h3 className="text-xl font-semibold">{compareItem2.shade}</h3>
-          <p className="text-sm text-slate-600">{compareItem2.brand}</p>
-
-          {compareItem2.image_url_1 || compareItem2.image_url_2 ? (
-            <div className="mt-4 flex flex-wrap gap-3">
-              {compareItem2.image_url_1 ? (
-                <img
-                  src={compareItem2.image_url_1}
-                  alt="Compare lipstick 2 photo 1"
-                  className="h-24 w-24 rounded-2xl object-cover"
-                />
-              ) : null}
-
-              {compareItem2.image_url_2 ? (
-                <img
-                  src={compareItem2.image_url_2}
-                  alt="Compare lipstick 2 photo 2"
-                  className="h-24 w-24 rounded-2xl object-cover"
-                />
-              ) : null}
-            </div>
-          ) : null}
-
-          <div className="mt-4 space-y-3 text-sm">
-            <div><span className="font-medium">Type:</span> {compareItem2.type || "—"}</div>
-            <div><span className="font-medium">Finish:</span> {compareItem2.finish || "—"}</div>
-            <div><span className="font-medium">Undertone:</span> {compareItem2.undertone || "—"}</div>
-            <div><span className="font-medium">Color Family:</span> {compareItem2.colorFamily || "—"}</div>
-            <div><span className="font-medium">Status:</span> {compareItem2.status || "—"}</div>
-            <div><span className="font-medium">Purchase Date:</span> {compareItem2.purchaseDate || "—"}</div>
-            <div><span className="font-medium">Occasion:</span> {compareItem2.occasion || "—"}</div>
-            <div><span className="font-medium">Favorite:</span> {compareItem2.favorite ? "Yes" : "No"}</div>
-            <div><span className="font-medium">Notes:</span> {compareItem2.notes || "—"}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-) : null}
+        ) : null}
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -2056,6 +2083,161 @@ export default function LipstickCatalogApp() {
               ) : null}
             </div>
           </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="grid gap-4 xl:grid-cols-[1.2fr_1fr_1fr]"
+        >
+          <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-slate-500">Collection Dashboard</p>
+                  <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+                    Your lipstick library at a glance
+                  </h2>
+                </div>
+                <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+                  {totalActive} active
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-rose-100 bg-rose-50/70 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Favorites</p>
+                  <p className="mt-1 text-2xl font-semibold">{favoritesPercent}%</p>
+                  <p className="mt-1 text-sm text-slate-600">{totalFavorites} of {totalActive}</p>
+                </div>
+
+                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Owned</p>
+                  <p className="mt-1 text-2xl font-semibold">{totalOwned}</p>
+                  <p className="mt-1 text-sm text-slate-600">In your collection</p>
+                </div>
+
+                <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Shared</p>
+                  <p className="mt-1 text-2xl font-semibold">{totalShared}</p>
+                  <p className="mt-1 text-sm text-slate-600">Shared with you</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                  <p className="text-xs uppercase tracking-wide text-slate-500">Wishlist</p>
+                  <p className="mt-1 text-2xl font-semibold">{totalWishlist}</p>
+                  <p className="mt-1 text-sm text-slate-600">Saved for later</p>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700">Favorites ratio</span>
+                    <span className="text-slate-500">{favoritesPercent}%</span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-rose-100">
+                    <div
+                      className="h-full rounded-full bg-rose-400 transition-all"
+                      style={{ width: `${favoritesPercent}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center justify-between text-sm">
+                    <span className="font-medium text-slate-700">Owned vs Wishlist</span>
+                    <span className="text-slate-500">
+                      {totalOwned} / {totalWishlist}
+                    </span>
+                  </div>
+                  <div className="flex h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full bg-rose-300"
+                      style={{
+                        width: `${totalActive > 0 ? (totalOwned / totalActive) * 100 : 0}%`,
+                      }}
+                    />
+                    <div
+                      className="h-full bg-amber-300"
+                      style={{
+                        width: `${totalActive > 0 ? (totalWishlist / totalActive) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">By Color Family</h3>
+                <Badge variant="secondary" className="rounded-full">
+                  {colorFamilyStats.length} groups
+                </Badge>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {colorFamilyStats.length > 0 ? (
+                  colorFamilyStats.slice(0, 6).map(([name, count]) => (
+                    <div key={name}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="font-medium text-slate-700">{name}</span>
+                        <span className="text-slate-500">{count}</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-rose-100">
+                        <div
+                          className="h-full rounded-full bg-rose-400"
+                          style={{
+                            width: `${totalActive > 0 ? (count / totalActive) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No color family data yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">By Finish</h3>
+                <Badge variant="secondary" className="rounded-full">
+                  {finishStats.length} groups
+                </Badge>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                {finishStats.length > 0 ? (
+                  finishStats.slice(0, 6).map(([name, count]) => (
+                    <div key={name}>
+                      <div className="mb-1 flex items-center justify-between text-sm">
+                        <span className="font-medium text-slate-700">{name}</span>
+                        <span className="text-slate-500">{count}</span>
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-fuchsia-100">
+                        <div
+                          className="h-full rounded-full bg-fuchsia-400"
+                          style={{
+                            width: `${totalActive > 0 ? (count / totalActive) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-slate-500">No finish data yet.</p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </motion.div>
 
         <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
