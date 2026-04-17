@@ -2433,89 +2433,83 @@ export default function LipstickCatalogApp() {
                           className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                           onClick={() => toggleExpanded(item.id)}
                         >
-
                           <div className="min-w-0">
-                            <h2 className="text-2xl font-semibold tracking-tight">
-                              {item.shade}
-                            </h2>
-
-                            <p className="mt-1 text-sm text-slate-600">
-                              {item.brand}
-                            </p>
+                            <h2 className="text-2xl font-semibold tracking-tight">{item.shade}</h2>
+                            <p className="mt-1 text-sm text-slate-600">{item.brand}</p>
                           </div>
 
-                          <div className="flex items-center gap-2 self-end sm:self-auto">
+                          <div className="flex items-center gap-1 self-end sm:self-auto">
                             <Button
                               variant="ghost"
                               size="icon"
                               disabled={isDeleted}
-                              className={`rounded-full ${item.favorite ? "text-rose-500" : "text-slate-400"
-                                }`}
+                              className={`rounded-full ${item.favorite ? "text-rose-500" : "text-slate-400"}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 void toggleFavorite(item.id);
                               }}
+                              title="Favorite"
                             >
                               <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
                             </Button>
 
-                            {isOwnedByYou ? (
-                              isDeleted ? (
-                                <>
+                            {isOwnedByYou && isDeleted && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/70"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void restoreLipstick(item.id);
+                                  }}
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" /> Restore
+                                </Button>
 
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="rounded-full"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditLipstick(item);
-                                    }}
-                                    title="Edit"
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/70"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void permanentlyDeleteLipstick(item.id);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" /> Delete Forever
+                                </Button>
+                              </>
+                            )}
 
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="rounded-full"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      void deleteOwnedLipstick(item.id);
-                                    }}
-                                    title="Move to Trash"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                            {isOwnedByYou && !isDeleted && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditLipstick(item);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
 
-                                </>
-                              ) : (
-                                <>
-                                  <Button
-                                    variant="outline"
-                                    className="rounded-2xl border-rose-100 bg-white/70"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditLipstick(item);
-                                    }}
-                                  >
-                                    <Pencil className="mr-2 h-4 w-4" /> Edit
-                                  </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void deleteOwnedLipstick(item.id);
+                                  }}
+                                  title="Move to Trash"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
 
-                                  <Button
-                                    variant="outline"
-                                    className="rounded-2xl border-rose-100 bg-white/70"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      void deleteOwnedLipstick(item.id);
-                                    }}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" /> Move to Trash
-                                  </Button>
-                                </>
-                              )
-                            ) : (
+                            {!isOwnedByYou && (
                               <Button
                                 variant="outline"
                                 className="rounded-2xl border-rose-100 bg-white/70"
@@ -2536,6 +2530,7 @@ export default function LipstickCatalogApp() {
                                 e.stopPropagation();
                                 toggleExpanded(item.id);
                               }}
+                              title={isExpanded ? "Collapse" : "Expand"}
                             >
                               {isExpanded ? (
                                 <ChevronUp className="h-5 w-5" />
@@ -2594,26 +2589,50 @@ export default function LipstickCatalogApp() {
                                 ) : null}
 
                                 <div className="flex flex-wrap gap-2">
+                                  <Badge className="rounded-full">
+                                    {item.status || "No status"}
+                                  </Badge>
+
+                                  <Badge
+                                    variant="outline"
+                                    className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                                  >
+                                    {isOwnedByYou ? "In your collection" : "Shared with you"}
+                                  </Badge>
+
+                                  {isDeleted ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                    >
+                                      In Trash
+                                    </Badge>
+                                  ) : null}
+
                                   {item.type ? (
                                     <Badge variant="secondary" className="rounded-full">
                                       {item.type}
                                     </Badge>
                                   ) : null}
+
                                   {item.finish ? (
                                     <Badge variant="secondary" className="rounded-full">
                                       {item.finish}
                                     </Badge>
                                   ) : null}
+
                                   {item.undertone ? (
                                     <Badge variant="secondary" className="rounded-full">
                                       {item.undertone}
                                     </Badge>
                                   ) : null}
+
                                   {item.colorFamily ? (
                                     <Badge variant="secondary" className="rounded-full">
                                       {item.colorFamily}
                                     </Badge>
                                   ) : null}
+
                                   {item.favorite ? (
                                     <Badge variant="secondary" className="rounded-full">
                                       Favorite
@@ -2684,8 +2703,7 @@ export default function LipstickCatalogApp() {
 
                                   {isDeleted && daysRemaining !== null ? (
                                     <p className="mt-1 text-sm text-slate-600">
-                                      {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before
-                                      permanent cleanup.
+                                      {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before permanent cleanup.
                                     </p>
                                   ) : null}
                                 </div>
@@ -2732,6 +2750,7 @@ export default function LipstickCatalogApp() {
                     </Card>
                   </motion.div>
                 );
+
               })
             )}
           </div>
