@@ -2307,184 +2307,182 @@ export default function LipstickCatalogApp() {
                           </div>
                         </div>
 
-                        <AnimatePresence initial={false}>
-                          {isExpanded ? (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden"
-                            >
+                       <AnimatePresence initial={false}>
+  {isExpanded ? (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      className="overflow-hidden"
+    >
+      <div className="mt-5 space-y-4">
+        {item.image_url_1 || item.image_url_2 ? (
+          <div className="flex flex-wrap gap-3">
+                                    {item.image_url_1 ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewImageUrl(item.image_url_1);
+                                        }}
+                                        className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                      >
+                                        <img
+                                          src={item.image_url_1}
+                                          alt="Lipstick photo 1"
+                                          className="h-24 w-24 object-cover"
+                                        />
+                                      </button>
+                                    ) : null}
 
-                              {item.image_url_1 || item.image_url_2 ? (
-                                <div className="flex flex-wrap gap-3">
-                                  {item.image_url_1 ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewImageUrl(item.image_url_1);
-                                      }}
-                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
-                                    >
-                                      <img
-                                        src={item.image_url_1}
-                                        alt="Lipstick photo 1"
-                                        className="h-24 w-24 object-cover"
-                                      />
-                                    </button>
+                                    {item.image_url_2 ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewImageUrl(item.image_url_2);
+                                        }}
+                                        className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                      >
+                                        <img
+                                          src={item.image_url_2}
+                                          alt="Lipstick photo 2"
+                                          className="h-24 w-24 object-cover"
+                                        />
+                                      </button>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+
+                                <div className="flex flex-wrap gap-2">
+                                  {item.type ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.type}
+                                    </Badge>
                                   ) : null}
-
-                                  {item.image_url_2 ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewImageUrl(item.image_url_2);
-                                      }}
-                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
-                                    >
-                                      <img
-                                        src={item.image_url_2}
-                                        alt="Lipstick photo 2"
-                                        className="h-24 w-24 object-cover"
-                                      />
-                                    </button>
+                                  {item.finish ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.finish}
+                                    </Badge>
+                                  ) : null}
+                                  {item.undertone ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.undertone}
+                                    </Badge>
+                                  ) : null}
+                                  {item.colorFamily ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.colorFamily}
+                                    </Badge>
+                                  ) : null}
+                                  {item.favorite ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      Favorite
+                                    </Badge>
                                   ) : null}
                                 </div>
-                              ) : null}
-                              <div className="flex flex-wrap gap-2">
-                                {item.type ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.type}
-                                  </Badge>
-                                ) : null}
-                                {item.finish ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.finish}
-                                  </Badge>
-                                ) : null}
-                                {item.undertone ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.undertone}
-                                  </Badge>
-                                ) : null}
-                                {item.colorFamily ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.colorFamily}
-                                  </Badge>
-                                ) : null}
-                                {item.favorite ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    Favorite
-                                  </Badge>
-                                ) : null}
-                              </div>
 
-                              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                                <div className="flex items-center gap-2">
-                                  <Sparkles className="h-4 w-4" /> Best for:{" "}
-                                  {item.occasion || "Not added"}
-                                </div>
+                                <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4" /> Best for: {item.occasion || "Not added"}
+                                  </div>
 
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4" />
-                                  {item.purchaseDate || "No date added"}
-                                </div>
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    {item.purchaseDate || "No date added"}
+                                  </div>
 
-                                <div className="mt-5 space-y-4">
-                                  <Tag className="h-4 w-4" />
-                                  {item.notes || "No notes added yet."}
-                                </div>
-
-                                {item.barcode ? (
                                   <div className="flex items-center gap-2 sm:col-span-2">
                                     <Tag className="h-4 w-4" />
-                                    Barcode: {item.barcode}
+                                    {item.notes || "No notes added yet."}
                                   </div>
-                                ) : null}
-                              </div>
 
-                              <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
-                                <p className="text-sm font-medium text-slate-700">
-                                  {isDeleted
-                                    ? "This lipstick is in Trash."
-                                    : isOwnedByYou
-                                      ? "You own this lipstick."
-                                      : "This lipstick was shared with you."}
-                                </p>
+                                  {item.barcode ? (
+                                    <div className="flex items-center gap-2 sm:col-span-2">
+                                      <Tag className="h-4 w-4" />
+                                      Barcode: {item.barcode}
+                                    </div>
+                                  ) : null}
+                                </div>
 
-                                <p className="mt-1 text-sm text-slate-600">
-                                  {isDeleted
-                                    ? "You can restore it or permanently delete it."
-                                    : isOwnedByYou
-                                      ? "You can edit, move it to Trash, favorite, and share it with someone else."
-                                      : "You can keep it in your list or remove it from your view."}
-                                </p>
-
-                                {isDeleted && deletedDaysAgo !== null ? (
-                                  <p className="mt-2 text-sm text-slate-600">
-                                    Deleted {deletedDaysAgo} day
-                                    {deletedDaysAgo === 1 ? "" : "s"} ago.
+                                <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
+                                  <p className="text-sm font-medium text-slate-700">
+                                    {isDeleted
+                                      ? "This lipstick is in Trash."
+                                      : isOwnedByYou
+                                        ? "You own this lipstick."
+                                        : "This lipstick was shared with you."}
                                   </p>
-                                ) : null}
 
-                                {isDeleted && daysRemaining !== null ? (
                                   <p className="mt-1 text-sm text-slate-600">
-                                    {daysRemaining} day
-                                    {daysRemaining === 1 ? "" : "s"} remaining before
-                                    permanent cleanup.
+                                    {isDeleted
+                                      ? "You can restore it or permanently delete it."
+                                      : isOwnedByYou
+                                        ? "You can edit, move it to Trash, favorite, and share it with someone else."
+                                        : "You can keep it in your list or remove it from your view."}
                                   </p>
-                                ) : null}
-                              </div>
 
-                              {isOwnedByYou && !isDeleted ? (
-                                <div className="rounded-3xl border border-rose-100 bg-white/70 p-4">
-                                  <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
-                                    <Share2 className="h-4 w-4" />
-                                    Share this lipstick
-                                  </h3>
-                                  <div className="flex flex-col gap-2 sm:flex-row">
-                                    <Input
-                                      value={shareEmails[item.id] ?? ""}
-                                      onChange={(e) =>
-                                        setShareEmails((prev) => ({
-                                          ...prev,
-                                          [item.id]: e.target.value,
-                                        }))
-                                      }
-                                      placeholder="friend@example.com"
-                                      className="rounded-2xl border-rose-100"
-                                    />
-                                    <Button
-                                      variant="outline"
-                                      className="rounded-2xl border-rose-100"
-                                      disabled={sharingLipstickId === item.id}
-                                      onClick={() => void shareLipstick(item.id)}
-                                    >
-                                      {sharingLipstickId === item.id ? "Sharing..." : "Share"}
-                                    </Button>
-                                  </div>
-                                  {shareMessages[item.id] ? (
+                                  {isDeleted && deletedDaysAgo !== null ? (
                                     <p className="mt-2 text-sm text-slate-600">
-                                      {shareMessages[item.id]}
+                                      Deleted {deletedDaysAgo} day{deletedDaysAgo === 1 ? "" : "s"} ago.
+                                    </p>
+                                  ) : null}
+
+                                  {isDeleted && daysRemaining !== null ? (
+                                    <p className="mt-1 text-sm text-slate-600">
+                                      {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before
+                                      permanent cleanup.
                                     </p>
                                   ) : null}
                                 </div>
-                              ) : null}
-                            </div>
+
+                                {isOwnedByYou && !isDeleted ? (
+                                  <div className="rounded-3xl border border-rose-100 bg-white/70 p-4">
+                                    <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
+                                      <Share2 className="h-4 w-4" />
+                                      Share this lipstick
+                                    </h3>
+                                    <div className="flex flex-col gap-2 sm:flex-row">
+                                      <Input
+                                        value={shareEmails[item.id] ?? ""}
+                                        onChange={(e) =>
+                                          setShareEmails((prev) => ({
+                                            ...prev,
+                                            [item.id]: e.target.value,
+                                          }))
+                                        }
+                                        placeholder="friend@example.com"
+                                        className="rounded-2xl border-rose-100"
+                                      />
+                                      <Button
+                                        variant="outline"
+                                        className="rounded-2xl border-rose-100"
+                                        disabled={sharingLipstickId === item.id}
+                                        onClick={() => void shareLipstick(item.id)}
+                                      >
+                                        {sharingLipstickId === item.id ? "Sharing..." : "Share"}
+                                      </Button>
+                                    </div>
+                                    {shareMessages[item.id] ? (
+                                      <p className="mt-2 text-sm text-slate-600">
+                                        {shareMessages[item.id]}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                              </div>
                             </motion.div>
                           ) : null}
-                      </AnimatePresence>
-                    </CardContent>
-                  </Card>
+                        </AnimatePresence>
+                      </CardContent>
+                    </Card>
                   </motion.div>
-          );
+                );
               })
             )}
+          </div>
         </div>
       </div>
     </div>
-    </div >
   );
 }
