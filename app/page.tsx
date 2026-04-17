@@ -2437,40 +2437,11 @@ export default function LipstickCatalogApp() {
 
 
                             <div className="flex flex-wrap items-center gap-2">
-                              <span
-                                className={`h-4 w-4 rounded-full ring-4 ring-white ${colorData.dot}`}
-                              />
-                              <h2 className="text-2xl font-semibold tracking-tight">{item.shade}</h2>
-
-                              <Badge className="rounded-full">{item.status || "No status"}</Badge>
-
-                              <Badge
-                                variant="outline"
-                                className={`rounded-full border ${ownershipBadgeClasses(
-                                  isOwnedByYou
-                                )}`}
-                              >
-                                {isOwnedByYou ? "In your collection" : "Shared with you"}
-                              </Badge>
-
-                              {isDeleted ? (
-                                <Badge
-                                  variant="outline"
-                                  className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
-                                >
-                                  In Trash
-                                </Badge>
-                              ) : null}
-
-                              {item.finish ? (
-                                <Badge
-                                  variant="secondary"
-                                  className={`rounded-full ${colorData.label}`}
-                                >
-                                  {item.finish}
-                                </Badge>
-                              ) : null}
-                            </div>
+  <span
+    className={`h-4 w-4 rounded-full ring-4 ring-white ${colorData.dot}`}
+  />
+  <h2 className="text-2xl font-semibold tracking-tight">{item.shade}</h2>
+</div>
 
                             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                               <span>{item.brand}</span>
