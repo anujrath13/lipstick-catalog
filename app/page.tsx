@@ -173,6 +173,7 @@ export default function LipstickCatalogApp() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [sharingLipstickId, setSharingLipstickId] = useState<number | null>(null);
+  const [openShareId, setOpenShareId] = useState<number | null>(null);
 
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -2503,7 +2504,7 @@ export default function LipstickCatalogApp() {
                                   className="rounded-full"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setSharingLipstickId((prev) => (prev === item.id ? null : item.id));
+                                    setOpenShareId((prev) => (prev === item.id ? null : item.id));
                                   }}
                                   title="Share"
                                 >
@@ -2706,7 +2707,7 @@ export default function LipstickCatalogApp() {
                                   ) : null}
                                 </div>
 
-                                {isOwnedByYou && !isDeleted && sharingLipstickId === item.id ? (
+                                {isOwnedByYou && !isDeleted && openShareId === item.id ? (
                                   <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
                                     <div className="flex flex-col gap-2 sm:flex-row">
                                       <Input
@@ -2725,12 +2726,13 @@ export default function LipstickCatalogApp() {
                                       <Button
                                         variant="outline"
                                         className="rounded-2xl border-rose-100"
+                                        disabled={sharingLipstickId === item.id}
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           void shareLipstick(item.id);
                                         }}
                                       >
-                                        Share
+                                        {sharingLipstickId === item.id ? "Sharing..." : "Share"}
                                       </Button>
                                     </div>
 
