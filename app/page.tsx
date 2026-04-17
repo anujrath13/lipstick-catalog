@@ -59,6 +59,8 @@ type LipstickItem = {
   favorite: boolean;
   deletedAt: string | null;
   barcode: string;
+  imageUrl1: string;
+  imageUrl2: string;
 };
 
 type ProfileRow = {
@@ -84,6 +86,8 @@ type LipstickFormValues = {
   occasion: string;
   notes: string;
   barcode: string;
+  imageUrl1: string;
+  imageUrl2: string;
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
@@ -103,6 +107,8 @@ const emptyForm: LipstickFormValues = {
   occasion: "",
   notes: "",
   barcode: "",
+  imageUrl1: "",
+  imageUrl2: "",
 };
 
 const colorFamilyMap: Record<
@@ -184,6 +190,8 @@ export default function LipstickCatalogApp() {
 
   const [isScanning, setIsScanning] = useState(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
+  const [imageFile1, setImageFile1] = useState<File | null>(null);
+  const [imageFile2, setImageFile2] = useState<File | null>(null);
 
   const [expandedItems, setExpandedItems] = useState<number[]>([]);
   const [isAddFormOpen, setIsAddFormOpen] = useState(false);
@@ -293,6 +301,8 @@ export default function LipstickCatalogApp() {
   const resetForm = () => {
     setForm(emptyForm);
     setEditingLipstickId(null);
+    setImageFile1(null);
+    setImageFile2(null);
   };
 
   const handleScanFileChange = async (
@@ -313,6 +323,94 @@ export default function LipstickCatalogApp() {
       setIsAddFormOpen(true);
 
       const imageDataUrl = await convertFileToDataUrl(file);
+      const compressImage = (file: File): Promise<File> =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+
+          const uploadLipstickImage = async (file: File) => {
+            if (!session?.user?.id) {
+              throw new Error("You must be signed in to upload images.");
+            }
+
+            const compressedFile = await compressImage(file);
+
+            const fileExt = "jpg";
+            const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+            const filePath = `${session.user.id}/${fileName}`;
+
+            const { error: uploadError } = await supabase.storage
+              .from("lipstick-images")
+              .upload(filePath, compressedFile, {
+                cacheControl: "3600",
+                upsert: false,
+                contentType: "image/jpeg",
+              });
+
+            if (uploadError) {
+              throw uploadError;
+            }
+
+            const { data } = supabase.storage
+              .from("lipstick-images")
+              .getPublicUrl(filePath);
+
+            return data.publicUrl;
+          };
+
+          reader.onload = () => {
+            const img = new Image();
+
+            img.onload = () => {
+              const maxWidth = 1200;
+              const maxHeight = 1200;
+
+              let { width, height } = img;
+
+              if (width > maxWidth || height > maxHeight) {
+                const scale = Math.min(maxWidth / width, maxHeight / height);
+                width = Math.round(width * scale);
+                height = Math.round(height * scale);
+              }
+
+              const canvas = document.createElement("canvas");
+              canvas.width = width;
+              canvas.height = height;
+
+              const ctx = canvas.getContext("2d");
+              if (!ctx) {
+                reject(new Error("Could not create image canvas."));
+                return;
+              }
+
+              ctx.drawImage(img, 0, 0, width, height);
+
+              canvas.toBlob(
+                (blob) => {
+                  if (!blob) {
+                    reject(new Error("Could not compress image."));
+                    return;
+                  }
+
+                  const compressedFile = new File(
+                    [blob],
+                    file.name.replace(/\.(png|jpg|jpeg|webp)$/i, ".jpg"),
+                    { type: "image/jpeg" }
+                  );
+
+                  resolve(compressedFile);
+                },
+                "image/jpeg",
+                0.75
+              );
+            };
+
+            img.onerror = () => reject(new Error("Could not load image."));
+            img.src = typeof reader.result === "string" ? reader.result : "";
+          };
+
+          reader.onerror = () => reject(new Error("Could not read image."));
+          reader.readAsDataURL(file);
+        });
 
       const res = await fetch("/api/scan-lipstick", {
         method: "POST",
@@ -538,6 +636,8 @@ export default function LipstickCatalogApp() {
       occasion: item.occasion,
       notes: item.notes,
       barcode: item.barcode,
+      imageUrl1: item.imageUrl1,
+      imageUrl2: item.imageUrl2,
     });
     setEditingLipstickId(item.id);
     setIsAddFormOpen(true);
@@ -680,6 +780,8 @@ export default function LipstickCatalogApp() {
       favorite: item.favorite ?? false,
       deletedAt: item.deleted_at ?? null,
       barcode: item.barcode ?? "",
+      imageUrl1: item.image_url_1 ?? "",
+imageUrl2: item.image_url_2 ?? "",
     }));
 
     setItems(mapped);
@@ -807,64 +909,80 @@ export default function LipstickCatalogApp() {
 
     setIsSaving(true);
 
-    const basePayload = {
-      brand: form.brand.trim(),
-      shade: form.shade.trim(),
-      type: form.type,
-      finish: form.finish,
-      undertone: form.undertone,
-      color_family: form.colorFamily,
-      status: form.status,
-      purchase_date: form.purchaseDate || todayString(),
-      occasion: form.occasion,
-      notes: form.notes.trim(),
-      barcode: form.barcode.trim() || null,
-    };
+    try {
+      let imageUrl1 = form.imageUrl1 || "";
+      let imageUrl2 = form.imageUrl2 || "";
 
-    if (isEditing && editingLipstickId !== null) {
-      const { error } = await supabase
-        .from("lipsticks")
-        .update(basePayload)
-        .eq("id", editingLipstickId);
+      if (imageFile1) {
+        imageUrl1 = await uploadLipstickImage(imageFile1);
+      }
 
-      setIsSaving(false);
+      if (imageFile2) {
+        imageUrl2 = await uploadLipstickImage(imageFile2);
+      }
+
+      const basePayload = {
+        brand: form.brand.trim(),
+        shade: form.shade.trim(),
+        type: form.type,
+        finish: form.finish,
+        undertone: form.undertone,
+        color_family: form.colorFamily,
+        status: form.status,
+        purchase_date: form.purchaseDate || todayString(),
+        occasion: form.occasion,
+        notes: form.notes.trim(),
+        barcode: form.barcode.trim() || null,
+        image_url_1: imageUrl1 || null,
+        image_url_2: imageUrl2 || null,
+      };
+
+      if (isEditing && editingLipstickId !== null) {
+        const { error } = await supabase
+          .from("lipsticks")
+          .update(basePayload)
+          .eq("id", editingLipstickId);
+
+        if (error) {
+          console.error("Error updating lipstick:", error);
+          showNotice("error", "Could not update lipstick.");
+          return;
+        }
+
+        resetForm();
+        setIsAddFormOpen(false);
+        await refreshDataOnly();
+        setExpandedItems((prev) =>
+          prev.includes(editingLipstickId) ? prev : [editingLipstickId, ...prev]
+        );
+        showNotice("success", "Lipstick updated.");
+        return;
+      }
+
+      const insertPayload = {
+        owner_user_id: session.user.id,
+        favorite: false,
+        ...basePayload,
+      };
+
+      const { error } = await supabase.from("lipsticks").insert(insertPayload);
 
       if (error) {
-        console.error("Error updating lipstick:", error);
-        showNotice("error", "Could not update lipstick.");
+        console.error("Error saving lipstick:", error);
+        showNotice("error", "Could not save lipstick.");
         return;
       }
 
       resetForm();
       setIsAddFormOpen(false);
       await refreshDataOnly();
-      setExpandedItems((prev) =>
-        prev.includes(editingLipstickId) ? prev : [editingLipstickId, ...prev]
-      );
-      showNotice("success", "Lipstick updated.");
-      return;
+      showNotice("success", "Lipstick added.");
+    } catch (error) {
+      console.error("Error uploading or saving lipstick:", error);
+      showNotice("error", "Could not upload photo or save lipstick.");
+    } finally {
+      setIsSaving(false);
     }
-
-    const insertPayload = {
-      owner_user_id: session.user.id,
-      favorite: false,
-      ...basePayload,
-    };
-
-    const { error } = await supabase.from("lipsticks").insert(insertPayload);
-
-    setIsSaving(false);
-
-    if (error) {
-      console.error("Error saving lipstick:", error);
-      showNotice("error", "Could not save lipstick.");
-      return;
-    }
-
-    resetForm();
-    setIsAddFormOpen(false);
-    await refreshDataOnly();
-    showNotice("success", "Lipstick added.");
   };
 
   const saveLipstick = async () => {
@@ -1849,6 +1967,40 @@ export default function LipstickCatalogApp() {
                           />
                         </div>
 
+                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Photo 1</Label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => setImageFile1(e.target.files?.[0] ?? null)}
+                              className="rounded-2xl border-rose-100"
+                            />
+                            {form.imageUrl1 ? (
+                              <p className="text-xs text-slate-500">Existing photo saved</p>
+                            ) : null}
+                            {imageFile1 ? (
+                              <p className="text-xs text-slate-500">{imageFile1.name}</p>
+                            ) : null}
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label>Photo 2</Label>
+                            <Input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => setImageFile2(e.target.files?.[0] ?? null)}
+                              className="rounded-2xl border-rose-100"
+                            />
+                            {form.imageUrl2 ? (
+                              <p className="text-xs text-slate-500">Existing photo saved</p>
+                            ) : null}
+                            {imageFile2 ? (
+                              <p className="text-xs text-slate-500">{imageFile2.name}</p>
+                            ) : null}
+                          </div>
+                        </div>
+
                         <div className="mt-4 space-y-2">
                           <Label>Notes</Label>
                           <Textarea
@@ -1961,6 +2113,26 @@ export default function LipstickCatalogApp() {
                           onClick={() => toggleExpanded(item.id)}
                         >
                           <div className="min-w-0">
+
+                            {item.imageUrl1 || item.imageUrl2 ? (
+                              <div className="mb-3 flex gap-2">
+                                {item.imageUrl1 ? (
+                                  <img
+                                    src={item.imageUrl1}
+                                    alt="Lipstick 1"
+                                    className="h-16 w-16 rounded-xl object-cover border border-rose-100"
+                                  />
+                                ) : null}
+
+                                {item.imageUrl2 ? (
+                                  <img
+                                    src={item.imageUrl2}
+                                    alt="Lipstick 2"
+                                    className="h-16 w-16 rounded-xl object-cover border border-rose-100"
+                                  />
+                                ) : null}
+                              </div>
+                            ) : null}
                             <div className="flex flex-wrap items-center gap-2">
                               <span
                                 className={`h-4 w-4 rounded-full ring-4 ring-white ${colorData.dot}`}
