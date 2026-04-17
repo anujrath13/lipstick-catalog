@@ -187,6 +187,7 @@ export default function LipstickCatalogApp() {
 
   const [form, setForm] = useState<LipstickFormValues>(emptyForm);
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
 
   const [isScanning, setIsScanning] = useState(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
@@ -353,40 +354,40 @@ export default function LipstickCatalogApp() {
       reader.readAsDataURL(file);
     });
 
-const uploadLipstickImage = async (file: File) => {
-  if (!session?.user?.id) {
-    throw new Error("You must be signed in to upload images.");
-  }
+  const uploadLipstickImage = async (file: File) => {
+    if (!session?.user?.id) {
+      throw new Error("You must be signed in to upload images.");
+    }
 
-  const compressedFile = await compressImage(file);
+    const compressedFile = await compressImage(file);
 
-  const fileExt = "jpg";
-  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-  const filePath = `${session.user.id}/${fileName}`;
+    const fileExt = "jpg";
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+    const filePath = `${session.user.id}/${fileName}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from("lipstick-images")
-    .upload(filePath, compressedFile, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: "image/jpeg",
-    });
+    const { error: uploadError } = await supabase.storage
+      .from("lipstick-images")
+      .upload(filePath, compressedFile, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: "image/jpeg",
+      });
 
-  if (uploadError) {
-    console.error("Supabase storage upload error:", uploadError);
-    throw new Error(uploadError.message || "Image upload failed.");
-  }
+    if (uploadError) {
+      console.error("Supabase storage upload error:", uploadError);
+      throw new Error(uploadError.message || "Image upload failed.");
+    }
 
-  const { data } = supabase.storage
-    .from("lipstick-images")
-    .getPublicUrl(filePath);
+    const { data } = supabase.storage
+      .from("lipstick-images")
+      .getPublicUrl(filePath);
 
-  if (!data?.publicUrl) {
-    throw new Error("Could not get uploaded image URL.");
-  }
+    if (!data?.publicUrl) {
+      throw new Error("Could not get uploaded image URL.");
+    }
 
-  return data.publicUrl;
-};
+    return data.publicUrl;
+  };
 
   const updateForm = (field: keyof LipstickFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -2130,25 +2131,6 @@ const uploadLipstickImage = async (file: File) => {
                         >
                           <div className="min-w-0">
 
-                            {item.imageUrl1 || item.imageUrl2 ? (
-                              <div className="mb-3 flex gap-2">
-                                {item.imageUrl1 ? (
-                                  <img
-                                    src={item.imageUrl1}
-                                    alt="Lipstick 1"
-                                    className="h-16 w-16 rounded-xl object-cover border border-rose-100"
-                                  />
-                                ) : null}
-
-                                {item.imageUrl2 ? (
-                                  <img
-                                    src={item.imageUrl2}
-                                    alt="Lipstick 2"
-                                    className="h-16 w-16 rounded-xl object-cover border border-rose-100"
-                                  />
-                                ) : null}
-                              </div>
-                            ) : null}
                             <div className="flex flex-wrap items-center gap-2">
                               <span
                                 className={`h-4 w-4 rounded-full ring-4 ring-white ${colorData.dot}`}
