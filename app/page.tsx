@@ -211,6 +211,22 @@ export default function LipstickCatalogApp() {
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  const getStoragePathFromPublicUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+
+    try {
+      const parsed = new URL(url);
+      const marker = "/storage/v1/object/public/lipstick-images/";
+      const index = parsed.pathname.indexOf(marker);
+
+      if (index === -1) return null;
+
+      return decodeURIComponent(parsed.pathname.slice(index + marker.length));
+    } catch {
+      return null;
+    }
+  };
+
   const isEditing = editingLipstickId !== null;
   const handleBarcodeDetected = async (barcode: string) => {
     try {
@@ -1086,16 +1102,44 @@ export default function LipstickCatalogApp() {
     );
     if (!confirmed) return;
 
-    const { error } = await supabase.from("lipsticks").delete().eq("id", id);
+    try {
+      const { data: lipstick, error: fetchError } = await supabase
+        .from("lipsticks")
+        .select("image_url_1, image_url_2")
+        .eq("id", id)
+        .single();
 
-    if (error) {
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      const pathsToDelete = [
+        getStoragePathFromPublicUrl(lipstick?.image_url_1),
+        getStoragePathFromPublicUrl(lipstick?.image_url_2),
+      ].filter((path): path is string => Boolean(path));
+
+      if (pathsToDelete.length > 0) {
+        const { error: storageError } = await supabase.storage
+          .from("lipstick-images")
+          .remove(pathsToDelete);
+
+        if (storageError) {
+          throw storageError;
+        }
+      }
+
+      const { error } = await supabase.from("lipsticks").delete().eq("id", id);
+
+      if (error) {
+        throw error;
+      }
+
+      await refreshDataOnly();
+      showNotice("success", "Lipstick permanently deleted.");
+    } catch (error) {
       console.error("Error permanently deleting lipstick:", error);
       showNotice("error", "Could not permanently delete lipstick.");
-      return;
     }
-
-    await refreshDataOnly();
-    showNotice("success", "Lipstick permanently deleted.");
   };
 
   const removeSharedLipstick = async (lipstickId: number) => {
@@ -2307,17 +2351,17 @@ export default function LipstickCatalogApp() {
                           </div>
                         </div>
 
-                       <AnimatePresence initial={false}>
-  {isExpanded ? (
-    <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      exit={{ opacity: 0, height: 0 }}
-      className="overflow-hidden"
-    >
-      <div className="mt-5 space-y-4">
-        {item.image_url_1 || item.image_url_2 ? (
-          <div className="flex flex-wrap gap-3">
+                        <AnimatePresence initial={false}>
+                          {isExpanded ? (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-5 space-y-4">
+                                {item.image_url_1 || item.image_url_2 ? (
+                                  <div className="flex flex-wrap gap-3">
                                     {item.image_url_1 ? (
                                       <button
                                         type="button"
