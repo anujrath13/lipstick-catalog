@@ -2433,31 +2433,15 @@ export default function LipstickCatalogApp() {
                           className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
                           onClick={() => toggleExpanded(item.id)}
                         >
+
                           <div className="min-w-0">
+                            <h2 className="text-2xl font-semibold tracking-tight">
+                              {item.shade}
+                            </h2>
 
-
-                            <div className="flex flex-wrap items-center gap-2">
-  <span
-    className={`h-4 w-4 rounded-full ring-4 ring-white ${colorData.dot}`}
-  />
-  <h2 className="text-2xl font-semibold tracking-tight">{item.shade}</h2>
-</div>
-
-                            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                              <span>{item.brand}</span>
-                              {item.colorFamily ? (
-                                <>
-                                  <span className="text-slate-300">•</span>
-                                  <span>{item.colorFamily}</span>
-                                </>
-                              ) : null}
-                              {item.undertone ? (
-                                <>
-                                  <span className="text-slate-300">•</span>
-                                  <span>{item.undertone}</span>
-                                </>
-                              ) : null}
-                            </div>
+                            <p className="mt-1 text-sm text-slate-600">
+                              {item.brand}
+                            </p>
                           </div>
 
                           <div className="flex items-center gap-2 self-end sm:self-auto">
@@ -2478,27 +2462,33 @@ export default function LipstickCatalogApp() {
                             {isOwnedByYou ? (
                               isDeleted ? (
                                 <>
+
                                   <Button
-                                    variant="outline"
-                                    className="rounded-2xl border-rose-100 bg-white/70"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      void restoreLipstick(item.id);
+                                      startEditLipstick(item);
                                     }}
+                                    title="Edit"
                                   >
-                                    <RotateCcw className="mr-2 h-4 w-4" /> Restore
+                                    <Pencil className="h-4 w-4" />
                                   </Button>
 
                                   <Button
-                                    variant="outline"
-                                    className="rounded-2xl border-rose-100 bg-white/70"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="rounded-full"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      void permanentlyDeleteLipstick(item.id);
+                                      void deleteOwnedLipstick(item.id);
                                     }}
+                                    title="Move to Trash"
                                   >
-                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Forever
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
+
                                 </>
                               ) : (
                                 <>
