@@ -188,6 +188,8 @@ export default function LipstickCatalogApp() {
   const [form, setForm] = useState<LipstickFormValues>(emptyForm);
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [compareIds, setCompareIds] = useState<number[]>([]);
+  const [isCompareOpen, setIsCompareOpen] = useState(false);
 
   const [isScanning, setIsScanning] = useState(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
@@ -224,6 +226,18 @@ export default function LipstickCatalogApp() {
       return decodeURIComponent(parsed.pathname.slice(index + marker.length));
     } catch {
       return null;
+    }
+  };
+
+  const deleteStorageFiles = async (paths: string[]) => {
+    if (paths.length === 0) return;
+
+    const { error } = await supabase.storage
+      .from("lipstick-images")
+      .remove(paths);
+
+    if (error) {
+      throw error;
     }
   };
 
@@ -621,6 +635,35 @@ export default function LipstickCatalogApp() {
     );
   };
 
+  const toggleCompareSelection = (id: number) => {
+    setCompareIds((prev) => {
+      if (prev.includes(id)) {
+        return prev.filter((itemId) => itemId !== id);
+      }
+
+      if (prev.length >= 2) {
+        showNotice("error", "You can compare up to 2 lipsticks.");
+        return prev;
+      }
+
+      return [...prev, id];
+    });
+  };
+
+  const openCompare = () => {
+    if (compareIds.length !== 2) {
+      showNotice("error", "Select 2 lipsticks to compare.");
+      return;
+    }
+
+    setIsCompareOpen(true);
+  };
+
+  const clearCompare = () => {
+    setCompareIds([]);
+    setIsCompareOpen(false);
+  };
+
   const clearFilters = (showToast = true) => {
     setQuery("");
     setTypeFilter("all");
@@ -963,25 +1006,61 @@ export default function LipstickCatalogApp() {
       };
 
       if (isEditing && editingLipstickId !== null) {
-        const { error } = await supabase
-          .from("lipsticks")
-          .update(basePayload)
-          .eq("id", editingLipstickId);
+        try {
+          const { data: existingLipstick, error: existingError } = await supabase
+            .from("lipsticks")
+            .select("image_url_1, image_url_2")
+            .eq("id", editingLipstickId)
+            .single();
 
-        if (error) {
+          if (existingError) {
+            throw existingError;
+          }
+
+          const { error: updateError } = await supabase
+            .from("lipsticks")
+            .update(basePayload)
+            .eq("id", editingLipstickId);
+
+          if (updateError) {
+            throw updateError;
+          }
+
+          const oldImage1 = existingLipstick?.image_url_1 ?? null;
+          const oldImage2 = existingLipstick?.image_url_2 ?? null;
+
+          const newImage1 = basePayload.image_url_1 ?? null;
+          const newImage2 = basePayload.image_url_2 ?? null;
+
+          const pathsToDelete: string[] = [];
+
+          if (oldImage1 && oldImage1 !== newImage1) {
+            const oldPath1 = getStoragePathFromPublicUrl(oldImage1);
+            if (oldPath1) pathsToDelete.push(oldPath1);
+          }
+
+          if (oldImage2 && oldImage2 !== newImage2) {
+            const oldPath2 = getStoragePathFromPublicUrl(oldImage2);
+            if (oldPath2) pathsToDelete.push(oldPath2);
+          }
+
+          if (pathsToDelete.length > 0) {
+            await deleteStorageFiles(pathsToDelete);
+          }
+
+          resetForm();
+          setIsAddFormOpen(false);
+          await refreshDataOnly();
+          setExpandedItems((prev) =>
+            prev.includes(editingLipstickId) ? prev : [editingLipstickId, ...prev]
+          );
+          showNotice("success", "Lipstick updated.");
+          return;
+        } catch (error) {
           console.error("Error updating lipstick:", error);
           showNotice("error", "Could not update lipstick.");
           return;
         }
-
-        resetForm();
-        setIsAddFormOpen(false);
-        await refreshDataOnly();
-        setExpandedItems((prev) =>
-          prev.includes(editingLipstickId) ? prev : [editingLipstickId, ...prev]
-        );
-        showNotice("success", "Lipstick updated.");
-        return;
       }
 
       const insertPayload = {
@@ -1340,6 +1419,7 @@ export default function LipstickCatalogApp() {
       );
     });
 
+
     const sorted = [...filtered].sort((a, b) => {
       if (sortBy === "newest") return b.id - a.id;
       if (sortBy === "oldest") return a.id - b.id;
@@ -1365,6 +1445,10 @@ export default function LipstickCatalogApp() {
     sortBy,
     session,
   ]);
+
+      const compareItems = items.filter((item) => compareIds.includes(item.id));
+    const compareItem1 = compareItems[0] ?? null;
+    const compareItem2 = compareItems[1] ?? null;
 
   const totalOwned = items.filter(
     (x) => x.ownerUserId === session?.user?.id && !x.deletedAt
@@ -1560,6 +1644,105 @@ export default function LipstickCatalogApp() {
             </div>
           </div>
         ) : null}
+        
+        {isCompareOpen && compareItem1 && compareItem2 ? (
+  <div
+    className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4"
+    onClick={() => setIsCompareOpen(false)}
+  >
+    <div
+      className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-white p-4 md:p-6"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Compare Lipsticks</h2>
+        <Button
+          variant="outline"
+          className="rounded-2xl border-rose-100"
+          onClick={() => setIsCompareOpen(false)}
+        >
+          Close
+        </Button>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-3xl border border-rose-100 p-4">
+          <h3 className="text-xl font-semibold">{compareItem1.shade}</h3>
+          <p className="text-sm text-slate-600">{compareItem1.brand}</p>
+
+          {compareItem1.image_url_1 || compareItem1.image_url_2 ? (
+            <div className="mt-4 flex flex-wrap gap-3">
+              {compareItem1.image_url_1 ? (
+                <img
+                  src={compareItem1.image_url_1}
+                  alt="Compare lipstick 1 photo 1"
+                  className="h-24 w-24 rounded-2xl object-cover"
+                />
+              ) : null}
+
+              {compareItem1.image_url_2 ? (
+                <img
+                  src={compareItem1.image_url_2}
+                  alt="Compare lipstick 1 photo 2"
+                  className="h-24 w-24 rounded-2xl object-cover"
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="mt-4 space-y-3 text-sm">
+            <div><span className="font-medium">Type:</span> {compareItem1.type || "—"}</div>
+            <div><span className="font-medium">Finish:</span> {compareItem1.finish || "—"}</div>
+            <div><span className="font-medium">Undertone:</span> {compareItem1.undertone || "—"}</div>
+            <div><span className="font-medium">Color Family:</span> {compareItem1.colorFamily || "—"}</div>
+            <div><span className="font-medium">Status:</span> {compareItem1.status || "—"}</div>
+            <div><span className="font-medium">Purchase Date:</span> {compareItem1.purchaseDate || "—"}</div>
+            <div><span className="font-medium">Occasion:</span> {compareItem1.occasion || "—"}</div>
+            <div><span className="font-medium">Favorite:</span> {compareItem1.favorite ? "Yes" : "No"}</div>
+            <div><span className="font-medium">Notes:</span> {compareItem1.notes || "—"}</div>
+          </div>
+        </div>
+
+        <div className="rounded-3xl border border-rose-100 p-4">
+          <h3 className="text-xl font-semibold">{compareItem2.shade}</h3>
+          <p className="text-sm text-slate-600">{compareItem2.brand}</p>
+
+          {compareItem2.image_url_1 || compareItem2.image_url_2 ? (
+            <div className="mt-4 flex flex-wrap gap-3">
+              {compareItem2.image_url_1 ? (
+                <img
+                  src={compareItem2.image_url_1}
+                  alt="Compare lipstick 2 photo 1"
+                  className="h-24 w-24 rounded-2xl object-cover"
+                />
+              ) : null}
+
+              {compareItem2.image_url_2 ? (
+                <img
+                  src={compareItem2.image_url_2}
+                  alt="Compare lipstick 2 photo 2"
+                  className="h-24 w-24 rounded-2xl object-cover"
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          <div className="mt-4 space-y-3 text-sm">
+            <div><span className="font-medium">Type:</span> {compareItem2.type || "—"}</div>
+            <div><span className="font-medium">Finish:</span> {compareItem2.finish || "—"}</div>
+            <div><span className="font-medium">Undertone:</span> {compareItem2.undertone || "—"}</div>
+            <div><span className="font-medium">Color Family:</span> {compareItem2.colorFamily || "—"}</div>
+            <div><span className="font-medium">Status:</span> {compareItem2.status || "—"}</div>
+            <div><span className="font-medium">Purchase Date:</span> {compareItem2.purchaseDate || "—"}</div>
+            <div><span className="font-medium">Occasion:</span> {compareItem2.occasion || "—"}</div>
+            <div><span className="font-medium">Favorite:</span> {compareItem2.favorite ? "Yes" : "No"}</div>
+            <div><span className="font-medium">Notes:</span> {compareItem2.notes || "—"}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+) : null}
 
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -1848,6 +2031,29 @@ export default function LipstickCatalogApp() {
                   </motion.div>
                 ) : null}
               </AnimatePresence>
+              {compareIds.length > 0 ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-rose-100 bg-white/90 p-3">
+                  <p className="text-sm text-slate-600">
+                    {compareIds.length} lipstick{compareIds.length === 1 ? "" : "s"} selected for compare
+                  </p>
+
+                  <Button
+                    onClick={openCompare}
+                    disabled={compareIds.length !== 2}
+                    className="rounded-2xl"
+                  >
+                    Compare
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={clearCompare}
+                    className="rounded-2xl border-rose-100"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              ) : null}
             </div>
           </div>
         </motion.div>
@@ -2465,6 +2671,21 @@ export default function LipstickCatalogApp() {
                                         ? "You can edit, move it to Trash, favorite, and share it with someone else."
                                         : "You can keep it in your list or remove it from your view."}
                                   </p>
+
+                                  {!isDeleted ? (
+                                    <div className="mt-3">
+                                      <Button
+                                        variant={compareIds.includes(item.id) ? "default" : "outline"}
+                                        className="rounded-2xl border-rose-100"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          toggleCompareSelection(item.id);
+                                        }}
+                                      >
+                                        {compareIds.includes(item.id) ? "Selected for Compare" : "Compare"}
+                                      </Button>
+                                    </div>
+                                  ) : null}
 
                                   {isDeleted && deletedDaysAgo !== null ? (
                                     <p className="mt-2 text-sm text-slate-600">
