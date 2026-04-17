@@ -294,6 +294,95 @@ export default function LipstickCatalogApp() {
   const normalizeScannedValue = (value: unknown) =>
     typeof value === "string" ? value.trim() : "";
 
+  const compressImage = (file: File): Promise<File> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = () => {
+        const img = new Image();
+
+        img.onload = () => {
+          const maxWidth = 1200;
+          const maxHeight = 1200;
+
+          let { width, height } = img;
+
+          if (width > maxWidth || height > maxHeight) {
+            const scale = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            reject(new Error("Could not create image canvas."));
+            return;
+          }
+
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(new Error("Could not compress image."));
+                return;
+              }
+
+              const compressedFile = new File(
+                [blob],
+                file.name.replace(/\.(png|jpg|jpeg|webp)$/i, ".jpg"),
+                { type: "image/jpeg" }
+              );
+
+              resolve(compressedFile);
+            },
+            "image/jpeg",
+            0.75
+          );
+        };
+
+        img.onerror = () => reject(new Error("Could not load image."));
+        img.src = typeof reader.result === "string" ? reader.result : "";
+      };
+
+      reader.onerror = () => reject(new Error("Could not read image."));
+      reader.readAsDataURL(file);
+    });
+
+  const uploadLipstickImage = async (file: File) => {
+    if (!session?.user?.id) {
+      throw new Error("You must be signed in to upload images.");
+    }
+
+    const compressedFile = await compressImage(file);
+
+    const fileExt = "jpg";
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+    const filePath = `${session.user.id}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("lipstick-images")
+      .upload(filePath, compressedFile, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType: "image/jpeg",
+      });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data } = supabase.storage
+      .from("lipstick-images")
+      .getPublicUrl(filePath);
+
+    return data.publicUrl;
+  };
+
   const updateForm = (field: keyof LipstickFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -323,94 +412,6 @@ export default function LipstickCatalogApp() {
       setIsAddFormOpen(true);
 
       const imageDataUrl = await convertFileToDataUrl(file);
-      const compressImage = (file: File): Promise<File> =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-
-          const uploadLipstickImage = async (file: File) => {
-            if (!session?.user?.id) {
-              throw new Error("You must be signed in to upload images.");
-            }
-
-            const compressedFile = await compressImage(file);
-
-            const fileExt = "jpg";
-            const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-            const filePath = `${session.user.id}/${fileName}`;
-
-            const { error: uploadError } = await supabase.storage
-              .from("lipstick-images")
-              .upload(filePath, compressedFile, {
-                cacheControl: "3600",
-                upsert: false,
-                contentType: "image/jpeg",
-              });
-
-            if (uploadError) {
-              throw uploadError;
-            }
-
-            const { data } = supabase.storage
-              .from("lipstick-images")
-              .getPublicUrl(filePath);
-
-            return data.publicUrl;
-          };
-
-          reader.onload = () => {
-            const img = new Image();
-
-            img.onload = () => {
-              const maxWidth = 1200;
-              const maxHeight = 1200;
-
-              let { width, height } = img;
-
-              if (width > maxWidth || height > maxHeight) {
-                const scale = Math.min(maxWidth / width, maxHeight / height);
-                width = Math.round(width * scale);
-                height = Math.round(height * scale);
-              }
-
-              const canvas = document.createElement("canvas");
-              canvas.width = width;
-              canvas.height = height;
-
-              const ctx = canvas.getContext("2d");
-              if (!ctx) {
-                reject(new Error("Could not create image canvas."));
-                return;
-              }
-
-              ctx.drawImage(img, 0, 0, width, height);
-
-              canvas.toBlob(
-                (blob) => {
-                  if (!blob) {
-                    reject(new Error("Could not compress image."));
-                    return;
-                  }
-
-                  const compressedFile = new File(
-                    [blob],
-                    file.name.replace(/\.(png|jpg|jpeg|webp)$/i, ".jpg"),
-                    { type: "image/jpeg" }
-                  );
-
-                  resolve(compressedFile);
-                },
-                "image/jpeg",
-                0.75
-              );
-            };
-
-            img.onerror = () => reject(new Error("Could not load image."));
-            img.src = typeof reader.result === "string" ? reader.result : "";
-          };
-
-          reader.onerror = () => reject(new Error("Could not read image."));
-          reader.readAsDataURL(file);
-        });
 
       const res = await fetch("/api/scan-lipstick", {
         method: "POST",
@@ -443,6 +444,8 @@ export default function LipstickCatalogApp() {
         occasion: normalizeScannedValue(scanned.occasion),
         notes: normalizeScannedValue(scanned.notes),
         barcode: normalizeScannedValue(scanned.barcode),
+        imageUrl1: "",
+        imageUrl2: "",
       });
 
       showNotice("success", "Lipstick scanned. Review and save.");
@@ -781,7 +784,7 @@ export default function LipstickCatalogApp() {
       deletedAt: item.deleted_at ?? null,
       barcode: item.barcode ?? "",
       imageUrl1: item.image_url_1 ?? "",
-imageUrl2: item.image_url_2 ?? "",
+      imageUrl2: item.image_url_2 ?? "",
     }));
 
     setItems(mapped);
