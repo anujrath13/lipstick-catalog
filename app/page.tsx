@@ -1336,8 +1336,11 @@ export default function LipstickCatalogApp() {
     }));
 
     await fetchShareRows();
+    setSharingLipstickId(null);
     showNotice("success", "Lipstick shared.");
   };
+
+
 
   const toggleFavorite = async (id: number) => {
     const currentItem = items.find((item) => item.id === id);
@@ -2500,6 +2503,19 @@ export default function LipstickCatalogApp() {
                                   className="rounded-full"
                                   onClick={(e) => {
                                     e.stopPropagation();
+                                    setSharingLipstickId((prev) => (prev === item.id ? null : item.id));
+                                  }}
+                                  title="Share"
+                                >
+                                  <Share2 className="h-4 w-4" />
+                                </Button>
+
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="rounded-full"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
                                     void deleteOwnedLipstick(item.id);
                                   }}
                                   title="Move to Trash"
@@ -2663,57 +2679,35 @@ export default function LipstickCatalogApp() {
                                   ) : null}
                                 </div>
 
-                                <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
-                                  <p className="text-sm font-medium text-slate-700">
-                                    {isDeleted
-                                      ? "This lipstick is in Trash."
-                                      : isOwnedByYou
-                                        ? "You own this lipstick."
-                                        : "This lipstick was shared with you."}
-                                  </p>
-
-                                  <p className="mt-1 text-sm text-slate-600">
-                                    {isDeleted
-                                      ? "You can restore it or permanently delete it."
-                                      : isOwnedByYou
-                                        ? "You can edit, move it to Trash, favorite, and share it with someone else."
-                                        : "You can keep it in your list or remove it from your view."}
-                                  </p>
-
+                                <div className="flex flex-wrap items-center gap-3">
                                   {!isDeleted ? (
-                                    <div className="mt-3">
-                                      <Button
-                                        variant={compareIds.includes(item.id) ? "default" : "outline"}
-                                        className="rounded-2xl border-rose-100"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleCompareSelection(item.id);
-                                        }}
-                                      >
-                                        {compareIds.includes(item.id) ? "Selected for Compare" : "Compare"}
-                                      </Button>
-                                    </div>
+                                    <Button
+                                      variant={compareIds.includes(item.id) ? "default" : "outline"}
+                                      className="rounded-2xl border-rose-100"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleCompareSelection(item.id);
+                                      }}
+                                    >
+                                      {compareIds.includes(item.id) ? "Selected" : "Compare"}
+                                    </Button>
                                   ) : null}
 
                                   {isDeleted && deletedDaysAgo !== null ? (
-                                    <p className="mt-2 text-sm text-slate-600">
+                                    <p className="text-sm text-slate-600">
                                       Deleted {deletedDaysAgo} day{deletedDaysAgo === 1 ? "" : "s"} ago.
                                     </p>
                                   ) : null}
 
                                   {isDeleted && daysRemaining !== null ? (
-                                    <p className="mt-1 text-sm text-slate-600">
+                                    <p className="text-sm text-slate-600">
                                       {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before permanent cleanup.
                                     </p>
                                   ) : null}
                                 </div>
 
-                                {isOwnedByYou && !isDeleted ? (
-                                  <div className="rounded-3xl border border-rose-100 bg-white/70 p-4">
-                                    <h3 className="mb-3 flex items-center gap-2 text-base font-medium">
-                                      <Share2 className="h-4 w-4" />
-                                      Share this lipstick
-                                    </h3>
+                                {isOwnedByYou && !isDeleted && sharingLipstickId === item.id ? (
+                                  <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
                                     <div className="flex flex-col gap-2 sm:flex-row">
                                       <Input
                                         value={shareEmails[item.id] ?? ""}
@@ -2725,16 +2719,21 @@ export default function LipstickCatalogApp() {
                                         }
                                         placeholder="friend@example.com"
                                         className="rounded-2xl border-rose-100"
+                                        onClick={(e) => e.stopPropagation()}
                                       />
+
                                       <Button
                                         variant="outline"
                                         className="rounded-2xl border-rose-100"
-                                        disabled={sharingLipstickId === item.id}
-                                        onClick={() => void shareLipstick(item.id)}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          void shareLipstick(item.id);
+                                        }}
                                       >
-                                        {sharingLipstickId === item.id ? "Sharing..." : "Share"}
+                                        Share
                                       </Button>
                                     </div>
+
                                     {shareMessages[item.id] ? (
                                       <p className="mt-2 text-sm text-slate-600">
                                         {shareMessages[item.id]}
