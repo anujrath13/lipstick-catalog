@@ -353,35 +353,40 @@ export default function LipstickCatalogApp() {
       reader.readAsDataURL(file);
     });
 
-  const uploadLipstickImage = async (file: File) => {
-    if (!session?.user?.id) {
-      throw new Error("You must be signed in to upload images.");
-    }
+const uploadLipstickImage = async (file: File) => {
+  if (!session?.user?.id) {
+    throw new Error("You must be signed in to upload images.");
+  }
 
-    const compressedFile = await compressImage(file);
+  const compressedFile = await compressImage(file);
 
-    const fileExt = "jpg";
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
-    const filePath = `${session.user.id}/${fileName}`;
+  const fileExt = "jpg";
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+  const filePath = `${session.user.id}/${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("lipstick-images")
-      .upload(filePath, compressedFile, {
-        cacheControl: "3600",
-        upsert: false,
-        contentType: "image/jpeg",
-      });
+  const { error: uploadError } = await supabase.storage
+    .from("lipstick-images")
+    .upload(filePath, compressedFile, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: "image/jpeg",
+    });
 
-    if (uploadError) {
-      throw uploadError;
-    }
+  if (uploadError) {
+    console.error("Supabase storage upload error:", uploadError);
+    throw new Error(uploadError.message || "Image upload failed.");
+  }
 
-    const { data } = supabase.storage
-      .from("lipstick-images")
-      .getPublicUrl(filePath);
+  const { data } = supabase.storage
+    .from("lipstick-images")
+    .getPublicUrl(filePath);
 
-    return data.publicUrl;
-  };
+  if (!data?.publicUrl) {
+    throw new Error("Could not get uploaded image URL.");
+  }
+
+  return data.publicUrl;
+};
 
   const updateForm = (field: keyof LipstickFormValues, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -980,9 +985,17 @@ export default function LipstickCatalogApp() {
       setIsAddFormOpen(false);
       await refreshDataOnly();
       showNotice("success", "Lipstick added.");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error uploading or saving lipstick:", error);
-      showNotice("error", "Could not upload photo or save lipstick.");
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+            ? error
+            : "Could not upload photo or save lipstick.";
+
+      showNotice("error", message);
     } finally {
       setIsSaving(false);
     }
