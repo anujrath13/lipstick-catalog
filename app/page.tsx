@@ -173,7 +173,7 @@ export default function LipstickCatalogApp() {
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [sharingLipstickId, setSharingLipstickId] = useState<number | null>(null);
-  const [openShareId, setOpenShareId] = useState<number | null>(null);
+
 
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -202,6 +202,7 @@ export default function LipstickCatalogApp() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [shareEmails, setShareEmails] = useState<Record<number, string>>({});
   const [shareMessages, setShareMessages] = useState<Record<number, string>>({});
+  const [shareModalItem, setShareModalItem] = useState<LipstickItem | null>(null);
   const [notice, setNotice] = useState<{ type: "success" | "error"; text: string } | null>(
     null
   );
@@ -281,6 +282,7 @@ export default function LipstickCatalogApp() {
           typeof scanned.status === "string" && scanned.status.trim()
             ? scanned.status
             : "Owned",
+        purchaseDate: "",
         occasion: typeof scanned.occasion === "string" ? scanned.occasion : "",
         notes:
           typeof scanned.notes === "string"
@@ -290,6 +292,8 @@ export default function LipstickCatalogApp() {
           typeof scanned.barcode === "string"
             ? scanned.barcode
             : barcode,
+        image_url_1: "",
+        image_url_2: "",
       });
 
       showNotice("success", `Barcode scanned: ${barcode}`);
@@ -1338,6 +1342,7 @@ export default function LipstickCatalogApp() {
 
     await fetchShareRows();
     setSharingLipstickId(null);
+    setShareModalItem(null);
     showNotice("success", "Lipstick shared.");
   };
 
@@ -1672,6 +1677,74 @@ export default function LipstickCatalogApp() {
                 alt="Lipstick full preview"
                 className="max-h-[90vh] max-w-[90vw] rounded-2xl object-contain shadow-2xl"
               />
+            </div>
+          </div>
+        ) : null}
+
+        {shareModalItem ? (
+          <div
+            className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 px-4"
+            onClick={() => setShareModalItem(null)}
+          >
+            <div
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold">Share lipstick</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Share <span className="font-medium">{shareModalItem.shade}</span> by{" "}
+                    <span className="font-medium">{shareModalItem.brand}</span>
+                  </p>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setShareModalItem(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mt-4 space-y-2">
+                <Label>Email</Label>
+                <Input
+                  value={shareEmails[shareModalItem.id] ?? ""}
+                  onChange={(e) =>
+                    setShareEmails((prev) => ({
+                      ...prev,
+                      [shareModalItem.id]: e.target.value,
+                    }))
+                  }
+                  placeholder="friend@example.com"
+                />
+              </div>
+
+              {shareMessages[shareModalItem.id] ? (
+                <p className="mt-3 text-sm">
+                  {shareMessages[shareModalItem.id]}
+                </p>
+              ) : null}
+
+              <div className="mt-5 flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShareModalItem(null)}
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  disabled={sharingLipstickId === shareModalItem.id}
+                  onClick={async () => {
+                    await shareLipstick(shareModalItem.id);
+                  }}
+                >
+                  {sharingLipstickId === shareModalItem.id ? "Sharing..." : "Share"}
+                </Button>
+              </div>
             </div>
           </div>
         ) : null}
@@ -2504,7 +2577,7 @@ export default function LipstickCatalogApp() {
                                   className="rounded-full"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    setOpenShareId((prev) => (prev === item.id ? null : item.id));
+                                    setShareModalItem(item);
                                   }}
                                   title="Share"
                                 >
@@ -2707,42 +2780,7 @@ export default function LipstickCatalogApp() {
                                   ) : null}
                                 </div>
 
-                                {isOwnedByYou && !isDeleted && openShareId === item.id ? (
-                                  <div className="rounded-2xl border border-rose-100 bg-white/70 p-4">
-                                    <div className="flex flex-col gap-2 sm:flex-row">
-                                      <Input
-                                        value={shareEmails[item.id] ?? ""}
-                                        onChange={(e) =>
-                                          setShareEmails((prev) => ({
-                                            ...prev,
-                                            [item.id]: e.target.value,
-                                          }))
-                                        }
-                                        placeholder="friend@example.com"
-                                        className="rounded-2xl border-rose-100"
-                                        onClick={(e) => e.stopPropagation()}
-                                      />
 
-                                      <Button
-                                        variant="outline"
-                                        className="rounded-2xl border-rose-100"
-                                        disabled={sharingLipstickId === item.id}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          void shareLipstick(item.id);
-                                        }}
-                                      >
-                                        {sharingLipstickId === item.id ? "Sharing..." : "Share"}
-                                      </Button>
-                                    </div>
-
-                                    {shareMessages[item.id] ? (
-                                      <p className="mt-2 text-sm text-slate-600">
-                                        {shareMessages[item.id]}
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                ) : null}
                               </div>
                             </motion.div>
                           ) : null}
