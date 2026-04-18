@@ -3098,6 +3098,5 @@ export default function LipstickCatalogApp() {
         </div>
       </div>
     </div>
-    </div >
   );
 }
