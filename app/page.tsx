@@ -96,7 +96,9 @@ type LipstickFormValues = {
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
+const REMEMBER_ME_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
+const REMEMBER_ME_KEY = "lipstick_remember_me";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
@@ -171,6 +173,7 @@ export default function LipstickCatalogApp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [authMessage, setAuthMessage] = useState("");
   const [isLoginSuccessAnimating, setIsLoginSuccessAnimating] = useState(false);
@@ -562,21 +565,32 @@ export default function LipstickCatalogApp() {
 
     const checkInactivity = async () => {
       const lastActivityRaw = localStorage.getItem(LAST_ACTIVITY_KEY);
+      const rememberMeEnabled = localStorage.getItem(REMEMBER_ME_KEY) === "true";
+      const timeoutMs = rememberMeEnabled
+        ? REMEMBER_ME_TIMEOUT_MS
+        : INACTIVITY_TIMEOUT_MS;
+
       const lastActivity = lastActivityRaw ? Number(lastActivityRaw) : Date.now();
       const now = Date.now();
 
-      if (now - lastActivity >= INACTIVITY_TIMEOUT_MS) {
+      if (now - lastActivity >= timeoutMs) {
         if (inactivityTimeoutRef.current) {
           clearTimeout(inactivityTimeoutRef.current);
           inactivityTimeoutRef.current = null;
         }
+
         await supabase.auth.signOut();
         localStorage.removeItem(LAST_ACTIVITY_KEY);
-        setAuthMessage("You were logged out after 20 minutes of inactivity.");
+
+        setAuthMessage(
+          rememberMeEnabled
+            ? "You were logged out after 1 day of inactivity."
+            : "You were logged out after 20 minutes of inactivity."
+        );
         return;
       }
 
-      const remainingTime = INACTIVITY_TIMEOUT_MS - (now - lastActivity);
+      const remainingTime = timeoutMs - (now - lastActivity);
 
       if (inactivityTimeoutRef.current) {
         clearTimeout(inactivityTimeoutRef.current);
@@ -959,6 +973,8 @@ export default function LipstickCatalogApp() {
     if (data.user) {
       await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+      localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+
       setEmail(normalizedEmail);
       setPassword("");
       setAuthMessage("Signed in.");
@@ -975,7 +991,9 @@ export default function LipstickCatalogApp() {
       clearTimeout(inactivityTimeoutRef.current);
       inactivityTimeoutRef.current = null;
     }
+
     localStorage.removeItem(LAST_ACTIVITY_KEY);
+    localStorage.removeItem(REMEMBER_ME_KEY);
     await supabase.auth.signOut();
   }
 
@@ -1525,88 +1543,88 @@ export default function LipstickCatalogApp() {
     return <div className="p-8">Loading...</div>;
   }
 
-if (session && isLoginSuccessAnimating) {
-  return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-rose-50 via-white to-fuchsia-50 px-6">
-      <div className="absolute inset-0">
-        <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-rose-200/30 blur-3xl" />
-        <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-fuchsia-200/30 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-pink-100/40 blur-3xl" />
-      </div>
+  if (session && isLoginSuccessAnimating) {
+    return (
+      <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-rose-50 via-white to-fuchsia-50 px-6">
+        <div className="absolute inset-0">
+          <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-rose-200/30 blur-3xl" />
+          <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-fuchsia-200/30 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-pink-100/40 blur-3xl" />
+        </div>
 
-      <div className="relative flex flex-col items-center text-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-8"
-        >
-          <p className="text-sm font-medium uppercase tracking-[0.28em] text-rose-400">
-            Welcome back
-          </p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
-            Opening your lipstick library...
-          </h2>
-        </motion.div>
-
-        <div className="relative h-64 w-64">
+        <div className="relative flex flex-col items-center text-center">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.35 }}
-            className="absolute inset-x-6 bottom-10 h-28 rounded-[2rem] border border-rose-200 bg-gradient-to-b from-rose-100 to-rose-200 shadow-xl"
-          />
-
-          <motion.div
-            initial={{ rotateX: 0, y: 0 }}
-            animate={{ rotateX: -72, y: -18 }}
-            transition={{ delay: 0.45, duration: 0.7, ease: "easeInOut" }}
-            style={{ transformOrigin: "bottom center", transformStyle: "preserve-3d" }}
-            className="absolute inset-x-6 bottom-[7.2rem] h-16 rounded-t-[2rem] border border-rose-200 bg-gradient-to-r from-rose-200 via-pink-200 to-fuchsia-200 shadow-md"
-          />
-
-          <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.7 }}
-            animate={{ opacity: 1, y: -8, scale: 1 }}
-            transition={{ delay: 0.95, duration: 0.55 }}
-            className="absolute left-1/2 top-[4.4rem] -translate-x-1/2"
+            initial={{ opacity: 0, scale: 0.92, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-8"
           >
-            <div className="flex flex-col items-center gap-3">
-              <motion.div
-                animate={{ y: [0, -8, 0] }}
-                transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
-                className="flex h-24 w-14 items-end justify-center rounded-t-[1.4rem] rounded-b-md bg-zinc-900 shadow-lg"
-              >
-                <div className="mb-2 h-12 w-10 rounded-t-xl rounded-b-sm bg-gradient-to-b from-rose-400 to-rose-600" />
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: [0, 1, 1, 0.7], scale: [0.8, 1.05, 1] }}
-                transition={{ delay: 1.1, duration: 0.8 }}
-                className="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-rose-600 shadow"
-              >
-                Ready
-              </motion.div>
-            </div>
+            <p className="text-sm font-medium uppercase tracking-[0.28em] text-rose-400">
+              Welcome back
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl">
+              Opening your lipstick library...
+            </h2>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 1, 0.4, 0] }}
-            transition={{ delay: 0.9, duration: 1.1 }}
-            className="absolute inset-0"
-          >
-            <div className="absolute left-10 top-10 h-3 w-3 rounded-full bg-rose-300" />
-            <div className="absolute right-12 top-16 h-2.5 w-2.5 rounded-full bg-pink-300" />
-            <div className="absolute left-16 top-24 h-2 w-2 rounded-full bg-fuchsia-300" />
-            <div className="absolute right-16 top-28 h-3 w-3 rounded-full bg-rose-200" />
-          </motion.div>
+          <div className="relative h-64 w-64">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.35 }}
+              className="absolute inset-x-6 bottom-10 h-28 rounded-[2rem] border border-rose-200 bg-gradient-to-b from-rose-100 to-rose-200 shadow-xl"
+            />
+
+            <motion.div
+              initial={{ rotateX: 0, y: 0 }}
+              animate={{ rotateX: -72, y: -18 }}
+              transition={{ delay: 0.45, duration: 0.7, ease: "easeInOut" }}
+              style={{ transformOrigin: "bottom center", transformStyle: "preserve-3d" }}
+              className="absolute inset-x-6 bottom-[7.2rem] h-16 rounded-t-[2rem] border border-rose-200 bg-gradient-to-r from-rose-200 via-pink-200 to-fuchsia-200 shadow-md"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.7 }}
+              animate={{ opacity: 1, y: -8, scale: 1 }}
+              transition={{ delay: 0.95, duration: 0.55 }}
+              className="absolute left-1/2 top-[4.4rem] -translate-x-1/2"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <motion.div
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                  className="flex h-24 w-14 items-end justify-center rounded-t-[1.4rem] rounded-b-md bg-zinc-900 shadow-lg"
+                >
+                  <div className="mb-2 h-12 w-10 rounded-t-xl rounded-b-sm bg-gradient-to-b from-rose-400 to-rose-600" />
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: [0, 1, 1, 0.7], scale: [0.8, 1.05, 1] }}
+                  transition={{ delay: 1.1, duration: 0.8 }}
+                  className="rounded-full bg-white/80 px-4 py-2 text-sm font-medium text-rose-600 shadow"
+                >
+                  Ready
+                </motion.div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 1, 0.4, 0] }}
+              transition={{ delay: 0.9, duration: 1.1 }}
+              className="absolute inset-0"
+            >
+              <div className="absolute left-10 top-10 h-3 w-3 rounded-full bg-rose-300" />
+              <div className="absolute right-12 top-16 h-2.5 w-2.5 rounded-full bg-pink-300" />
+              <div className="absolute left-16 top-24 h-2 w-2 rounded-full bg-fuchsia-300" />
+              <div className="absolute right-16 top-28 h-3 w-3 rounded-full bg-rose-200" />
+            </motion.div>
+          </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
   if (!session) {
     return (
@@ -1744,6 +1762,18 @@ if (session && isLoginSuccessAnimating) {
                         )}
                       </button>
                     </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 text-sm text-zinc-600">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded border-rose-200 text-rose-500 focus:ring-rose-300"
+                      />
+                      Remember me for 1 day
+                    </label>
                   </div>
 
                   {authMessage ? (
