@@ -1728,7 +1728,7 @@ export default function LipstickCatalogApp() {
                         type="email"
                         value={email}
                         onChange={(e) => {
-                          setPassword(e.target.value);
+                          setEmail(e.target.value);
                           setAuthMessage("");
                         }}
                         placeholder="you@example.com"
