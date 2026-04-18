@@ -1771,13 +1771,15 @@ export default function LipstickCatalogApp() {
                       <button
                         type="button"
                         onClick={() => setRememberMe((prev) => !prev)}
-                        className={`relative h-6 w-11 rounded-full transition focus:outline-none ${rememberMe
-                            ? "bg-rose-500 hover:bg-rose-600"
+                        className={`relative h-6 w-11 rounded-full transition-all duration-300 focus:outline-none ${rememberMe
+                            ? "bg-gradient-to-r from-rose-400 to-fuchsia-500 shadow-md shadow-rose-200/60"
                             : "bg-zinc-300 hover:bg-zinc-400"
                           }`}
                       >
                         <span
-                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${rememberMe ? "left-5" : "left-0.5"
+                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-300 ${rememberMe
+                              ? "left-5 shadow-lg"
+                              : "left-0.5"
                             }`}
                         />
                       </button>
