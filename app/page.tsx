@@ -26,6 +26,11 @@ import {
   Download,
   Camera,
   Loader2,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  ArrowRight,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -165,6 +170,7 @@ export default function LipstickCatalogApp() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [authMessage, setAuthMessage] = useState("");
 
@@ -1516,72 +1522,171 @@ export default function LipstickCatalogApp() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-white px-4 py-6 md:p-8">
-        <div className="mx-auto max-w-md">
-          <Card className="overflow-hidden rounded-[28px] border border-rose-100 bg-white/95 shadow-lg shadow-rose-100/40">
-            <div className="h-2 bg-gradient-to-r from-rose-200 via-pink-200 to-fuchsia-200" />
-            <CardHeader>
-              <CardTitle className="text-3xl tracking-tight">My Lipstick Library</CardTitle>
-              <p className="text-sm text-slate-600">
-                Sign in to organize, filter, and share your collection.
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="rounded-2xl border-rose-100"
-                />
+      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-rose-50 via-white to-fuchsia-50">
+        <div className="absolute inset-0">
+          <div className="absolute -left-24 top-16 h-72 w-72 rounded-full bg-rose-200/30 blur-3xl" />
+          <div className="absolute right-0 top-0 h-96 w-96 rounded-full bg-fuchsia-200/30 blur-3xl" />
+          <div className="absolute bottom-0 left-1/3 h-80 w-80 rounded-full bg-pink-100/40 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto grid min-h-screen max-w-7xl items-center gap-8 px-4 py-8 md:px-8 lg:grid-cols-2 lg:px-12">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="hidden lg:block"
+          >
+            <div className="max-w-xl space-y-6">
+              <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/70 px-4 py-2 text-sm text-rose-700 shadow-sm backdrop-blur">
+                <Sparkles className="h-4 w-4" />
+                Organize your lipstick collection beautifully
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Password</Label>
-                  {authMode === "signin" ? (
-                    <button
-                      type="button"
-                      onClick={() => void handleForgotPassword()}
-                      className="text-sm font-medium text-rose-600 transition hover:text-rose-700"
-                    >
-                      Forgot password?
-                    </button>
-                  ) : null}
+              <div className="space-y-4">
+                <h1 className="text-5xl font-semibold tracking-tight text-zinc-900 xl:text-6xl">
+                  Your lipstick collection,
+                  <span className="block bg-gradient-to-r from-rose-500 to-fuchsia-500 bg-clip-text text-transparent">
+                    styled like a luxury app.
+                  </span>
+                </h1>
+                <p className="max-w-lg text-lg leading-8 text-zinc-600">
+                  Track shades, compare finishes, save favorites, and share your collection with a cleaner,
+                  more premium experience.
+                </p>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-3xl border border-white/60 bg-white/70 p-4 shadow-lg shadow-rose-100/40 backdrop-blur">
+                  <p className="text-2xl font-semibold text-zinc-900">2x</p>
+                  <p className="mt-1 text-sm text-zinc-500">Cleaner organization</p>
+                </div>
+                <div className="rounded-3xl border border-white/60 bg-white/70 p-4 shadow-lg shadow-rose-100/40 backdrop-blur">
+                  <p className="text-2xl font-semibold text-zinc-900">Fast</p>
+                  <p className="mt-1 text-sm text-zinc-500">Search, filter, compare</p>
+                </div>
+                <div className="rounded-3xl border border-white/60 bg-white/70 p-4 shadow-lg shadow-rose-100/40 backdrop-blur">
+                  <p className="text-2xl font-semibold text-zinc-900">Secure</p>
+                  <p className="mt-1 text-sm text-zinc-500">Private collection access</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.05 }}
+            className="mx-auto w-full max-w-md"
+          >
+            <Card className="overflow-hidden rounded-[2rem] border border-white/60 bg-white/85 shadow-2xl shadow-rose-100/50 backdrop-blur-xl">
+              <div className="h-2 w-full bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300" />
+
+              <CardContent className="p-6 sm:p-8">
+                <div className="mb-8 space-y-3 text-center sm:text-left">
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-100 to-fuchsia-100 sm:mx-0">
+                    <Sparkles className="h-6 w-6 text-rose-500" />
+                  </div>
+
+                  <div>
+                    <h2 className="text-3xl font-semibold tracking-tight text-zinc-900">
+                      {authMode === "signin" ? "Welcome back" : "Create your account"}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-zinc-500">
+                      {authMode === "signin"
+                        ? "Sign in to manage your lipstick library, favorites, photos, and shares."
+                        : "Create an account to start organizing your lipstick collection beautifully."}
+                    </p>
+                  </div>
                 </div>
 
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Your password"
-                  className="rounded-2xl border-rose-100"
-                />
-              </div>
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-sm font-medium text-zinc-700">
+                      Email
+                    </Label>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@example.com"
+                        className="h-12 rounded-2xl border-rose-100 bg-white pl-11 text-base shadow-sm placeholder:text-zinc-400"
+                      />
+                    </div>
+                  </div>
 
-              {authMessage ? (
-                <p className="text-sm text-slate-600">{authMessage}</p>
-              ) : null}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <Label htmlFor="password" className="text-sm font-medium text-zinc-700">
+                        Password
+                      </Label>
 
-              <Button onClick={handleAuth} className="w-full rounded-2xl">
-                {authMode === "signin" ? "Sign In" : "Create Account"}
-              </Button>
+                      {authMode === "signin" ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleForgotPassword()}
+                          className="text-sm font-medium text-rose-500 transition hover:text-rose-600"
+                        >
+                          Forgot password?
+                        </button>
+                      ) : null}
+                    </div>
 
-              <Button
-                variant="outline"
-                onClick={() =>
-                  setAuthMode((prev) => (prev === "signin" ? "signup" : "signin"))
-                }
-                className="w-full rounded-2xl border-rose-100"
-              >
-                {authMode === "signin"
-                  ? "Need an account? Sign up"
-                  : "Already have an account? Sign in"}
-              </Button>
-            </CardContent>
-          </Card>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        className="h-12 rounded-2xl border-rose-100 bg-white pl-11 pr-12 text-base shadow-sm placeholder:text-zinc-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 transition hover:text-zinc-600"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {authMessage ? (
+                    <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-zinc-700">
+                      {authMessage}
+                    </div>
+                  ) : null}
+
+                  <Button
+                    onClick={handleAuth}
+                    className="h-12 w-full rounded-2xl bg-zinc-950 text-base font-medium text-white transition hover:bg-zinc-800"
+                  >
+                    {authMode === "signin" ? "Sign In" : "Create Account"}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      setAuthMode((prev) => (prev === "signin" ? "signup" : "signin"))
+                    }
+                    className="h-12 w-full rounded-2xl border-rose-100 bg-white text-base font-medium text-zinc-800 hover:bg-rose-50"
+                  >
+                    {authMode === "signin"
+                      ? "Need an account? Sign up"
+                      : "Already have an account? Sign in"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
     );
