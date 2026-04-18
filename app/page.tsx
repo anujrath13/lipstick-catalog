@@ -1766,20 +1766,22 @@ export default function LipstickCatalogApp() {
 
                   {authMode === "signin" ? (
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-zinc-600">Remember me for 1 day</span>
+                      <span className="text-sm text-zinc-600">
+                        {rememberMe ? "Remembered ✓" : "Remember me for 1 day"}
+                      </span>
 
                       <button
                         type="button"
                         onClick={() => setRememberMe((prev) => !prev)}
                         className={`relative h-6 w-11 rounded-full transition-all duration-300 focus:outline-none ${rememberMe
-                            ? "bg-gradient-to-r from-rose-400 to-fuchsia-500 shadow-md shadow-rose-200/60"
-                            : "bg-zinc-300 hover:bg-zinc-400"
+                          ? "bg-gradient-to-r from-rose-400 to-fuchsia-500 shadow-md shadow-rose-200/60"
+                          : "bg-zinc-300 hover:bg-zinc-400"
                           }`}
                       >
                         <span
                           className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-md transition-all duration-300 ${rememberMe
-                              ? "left-5 shadow-lg"
-                              : "left-0.5"
+                            ? "left-5 shadow-lg"
+                            : "left-0.5"
                             }`}
                         />
                       </button>
