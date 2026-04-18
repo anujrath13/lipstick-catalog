@@ -1764,17 +1764,25 @@ export default function LipstickCatalogApp() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-2 text-sm text-zinc-600">
-                      <input
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="h-4 w-4 rounded border-rose-200 text-rose-500 focus:ring-rose-300"
-                      />
-                      Remember me for 1 day
-                    </label>
-                  </div>
+                  {authMode === "signin" ? (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-zinc-600">Remember me for 1 day</span>
+
+                      <button
+                        type="button"
+                        onClick={() => setRememberMe((prev) => !prev)}
+                        className={`relative h-6 w-11 rounded-full transition focus:outline-none ${rememberMe
+                            ? "bg-rose-500 hover:bg-rose-600"
+                            : "bg-zinc-300 hover:bg-zinc-400"
+                          }`}
+                      >
+                        <span
+                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition ${rememberMe ? "left-5" : "left-0.5"
+                            }`}
+                        />
+                      </button>
+                    </div>
+                  ) : null}
 
                   {authMessage ? (
                     <div className="rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm text-zinc-700">
