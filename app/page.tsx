@@ -743,7 +743,6 @@ export default function LipstickCatalogApp() {
     });
     setEditingLipstickId(item.id);
     setIsAddFormOpen(true);
-    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleRefreshView = async () => {
@@ -2007,6 +2006,276 @@ export default function LipstickCatalogApp() {
           </div>
         ) : null}
 
+        {isAddFormOpen ? (
+          <div
+            className="fixed inset-0 z-[78] flex items-center justify-center bg-black/50 px-4 py-6"
+            onClick={handleCancelForm}
+          >
+            <div
+              className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-[32px] border border-white/70 bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">
+                    {isEditing ? "Edit lipstick" : "Add a new lipstick"}
+                  </h2>
+                  <p className="mt-1 text-sm text-zinc-500">
+                    {isEditing
+                      ? "Update the details of your selected lipstick."
+                      : "Save a new shade to your library."}
+                  </p>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  onClick={handleCancelForm}
+                >
+                  <X className="h-5 w-5" />
+                </Button>
+              </div>
+
+              <div className="space-y-5">
+                <div className="rounded-2xl border border-rose-100 p-4">
+                  <p className="mb-4 text-sm font-medium text-slate-700">Basic details</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Brand</Label>
+                      <Input
+                        ref={brandInputRef}
+                        value={form.brand}
+                        onChange={(e) => updateForm("brand", e.target.value)}
+                        placeholder="e.g. MAC"
+                        className="rounded-2xl border-rose-100"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Shade</Label>
+                      <Input
+                        value={form.shade}
+                        onChange={(e) => updateForm("shade", e.target.value)}
+                        placeholder="e.g. Velvet Teddy"
+                        className="rounded-2xl border-rose-100"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-rose-100 p-4">
+                  <p className="mb-4 text-sm font-medium text-slate-700">Formula & color</p>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Type</Label>
+                      <Select
+                        value={form.type || undefined}
+                        onValueChange={(v) => updateForm("type", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Bullet">Bullet</SelectItem>
+                          <SelectItem value="Liquid">Liquid</SelectItem>
+                          <SelectItem value="Tint">Tint</SelectItem>
+                          <SelectItem value="Gloss">Gloss</SelectItem>
+                          <SelectItem value="Balm">Balm</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Finish</Label>
+                      <Select
+                        value={form.finish || undefined}
+                        onValueChange={(v) => updateForm("finish", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select finish" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Matte">Matte</SelectItem>
+                          <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
+                          <SelectItem value="Soft Matte">Soft Matte</SelectItem>
+                          <SelectItem value="Satin">Satin</SelectItem>
+                          <SelectItem value="Glossy">Glossy</SelectItem>
+                          <SelectItem value="Sheer">Sheer</SelectItem>
+                          <SelectItem value="Tint">Tint</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Undertone</Label>
+                      <Select
+                        value={form.undertone || undefined}
+                        onValueChange={(v) => updateForm("undertone", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select undertone" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Warm">Warm</SelectItem>
+                          <SelectItem value="Cool">Cool</SelectItem>
+                          <SelectItem value="Neutral">Neutral</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Color family</Label>
+                      <Select
+                        value={form.colorFamily || undefined}
+                        onValueChange={(v) => updateForm("colorFamily", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select color family" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Red">Red</SelectItem>
+                          <SelectItem value="Pink">Pink</SelectItem>
+                          <SelectItem value="Berry">Berry</SelectItem>
+                          <SelectItem value="Brown">Brown</SelectItem>
+                          <SelectItem value="Nude">Nude</SelectItem>
+                          <SelectItem value="Coral">Coral</SelectItem>
+                          <SelectItem value="Mauve">Mauve</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-rose-100 p-4">
+                  <p className="mb-4 text-sm font-medium text-slate-700">Usage & notes</p>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select
+                        value={form.status || undefined}
+                        onValueChange={(v) => updateForm("status", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Owned">Owned</SelectItem>
+                          <SelectItem value="Wishlist">Wishlist</SelectItem>
+                          <SelectItem value="Decluttered">Decluttered</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Best for</Label>
+                      <Select
+                        value={form.occasion || undefined}
+                        onValueChange={(v) => updateForm("occasion", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select best use" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Daily">Daily</SelectItem>
+                          <SelectItem value="Office">Office</SelectItem>
+                          <SelectItem value="Evening">Evening</SelectItem>
+                          <SelectItem value="Party">Party</SelectItem>
+                          <SelectItem value="Anytime">Anytime</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <Label>Purchase date</Label>
+                    <Input
+                      type="date"
+                      value={form.purchaseDate}
+                      onChange={(e) => updateForm("purchaseDate", e.target.value)}
+                      className="rounded-2xl border-rose-100"
+                    />
+                  </div>
+
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Photo 1</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setImageFile1(e.target.files?.[0] ?? null)}
+                        className="rounded-2xl border-rose-100"
+                      />
+                      {form.image_url_1 ? (
+                        <p className="text-xs text-slate-500">Existing photo saved</p>
+                      ) : null}
+                      {imageFile1 ? (
+                        <p className="text-xs text-slate-500">{imageFile1.name}</p>
+                      ) : null}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Photo 2</Label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => setImageFile2(e.target.files?.[0] ?? null)}
+                        className="rounded-2xl border-rose-100"
+                      />
+                      {form.image_url_2 ? (
+                        <p className="text-xs text-slate-500">Existing photo saved</p>
+                      ) : null}
+                      {imageFile2 ? (
+                        <p className="text-xs text-slate-500">{imageFile2.name}</p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea
+                      value={form.notes}
+                      onChange={(e) => updateForm("notes", e.target.value)}
+                      placeholder="Add dupes, wear time, where you bought it, special memories, etc."
+                      className="min-h-[110px] rounded-2xl border-rose-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelForm}
+                    disabled={isSaving}
+                    className="rounded-2xl border-rose-100"
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    onClick={() => void saveLipstick()}
+                    disabled={isSaving}
+                    className="rounded-2xl"
+                  >
+                    {isEditing ? (
+                      <>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        {isSaving ? "Updating..." : "Update Lipstick"}
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="mr-2 h-4 w-4" />
+                        {isSaving ? "Saving..." : "Save Lipstick"}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
         {isCompareOpen && compareItem1 && compareItem2 ? (
           <div
             className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4"
@@ -2437,681 +2706,398 @@ export default function LipstickCatalogApp() {
           </AnimatePresence>
         </motion.section>
 
-
-        <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <motion.div
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <Card className="overflow-hidden rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
-              <CardHeader
-                className="cursor-pointer"
-                onClick={() => {
-                  if (isAddFormOpen) {
-                    handleCancelForm();
-                  } else {
-                    startAddLipstick();
-                  }
-                }}
-              >
-                <CardTitle className="flex items-center justify-between text-xl">
-                  <span className="flex items-center gap-2">
-                    {isEditing ? <Pencil className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
-                    {isEditing ? "Edit lipstick" : "Add a new lipstick"}
-                  </span>
-                  {isAddFormOpen ? (
-                    <ChevronUp className="h-5 w-5" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5" />
-                  )}
-                </CardTitle>
-                <p className="text-sm font-normal text-slate-600">
-                  {isEditing
-                    ? "Update the details of your selected lipstick."
-                    : "Save a new shade to your library."}
-                </p>
-              </CardHeader>
-
-              <AnimatePresence initial={false}>
-                {isAddFormOpen ? (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <CardContent className="space-y-5">
-                      <div className="rounded-2xl border border-rose-100 p-4">
-                        <p className="mb-4 text-sm font-medium text-slate-700">Basic details</p>
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label>Brand</Label>
-                            <Input
-                              ref={brandInputRef}
-                              value={form.brand}
-                              onChange={(e) => updateForm("brand", e.target.value)}
-                              placeholder="e.g. MAC"
-                              className="rounded-2xl border-rose-100"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Shade</Label>
-                            <Input
-                              value={form.shade}
-                              onChange={(e) => updateForm("shade", e.target.value)}
-                              placeholder="e.g. Velvet Teddy"
-                              className="rounded-2xl border-rose-100"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-rose-100 p-4">
-                        <p className="mb-4 text-sm font-medium text-slate-700">Formula & color</p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label>Type</Label>
-                            <Select
-                              value={form.type || undefined}
-                              onValueChange={(v) => updateForm("type", v)}
-                            >
-                              <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Bullet">Bullet</SelectItem>
-                                <SelectItem value="Liquid">Liquid</SelectItem>
-                                <SelectItem value="Tint">Tint</SelectItem>
-                                <SelectItem value="Gloss">Gloss</SelectItem>
-                                <SelectItem value="Balm">Balm</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Finish</Label>
-                            <Select
-                              value={form.finish || undefined}
-                              onValueChange={(v) => updateForm("finish", v)}
-                            >
-                              <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue placeholder="Select finish" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Matte">Matte</SelectItem>
-                                <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                                <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                                <SelectItem value="Satin">Satin</SelectItem>
-                                <SelectItem value="Glossy">Glossy</SelectItem>
-                                <SelectItem value="Sheer">Sheer</SelectItem>
-                                <SelectItem value="Tint">Tint</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Undertone</Label>
-                            <Select
-                              value={form.undertone || undefined}
-                              onValueChange={(v) => updateForm("undertone", v)}
-                            >
-                              <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue placeholder="Select undertone" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Warm">Warm</SelectItem>
-                                <SelectItem value="Cool">Cool</SelectItem>
-                                <SelectItem value="Neutral">Neutral</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Color family</Label>
-                            <Select
-                              value={form.colorFamily || undefined}
-                              onValueChange={(v) => updateForm("colorFamily", v)}
-                            >
-                              <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue placeholder="Select color family" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Red">Red</SelectItem>
-                                <SelectItem value="Pink">Pink</SelectItem>
-                                <SelectItem value="Berry">Berry</SelectItem>
-                                <SelectItem value="Brown">Brown</SelectItem>
-                                <SelectItem value="Nude">Nude</SelectItem>
-                                <SelectItem value="Coral">Coral</SelectItem>
-                                <SelectItem value="Mauve">Mauve</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="rounded-2xl border border-rose-100 p-4">
-                        <p className="mb-4 text-sm font-medium text-slate-700">Usage & notes</p>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label>Status</Label>
-                            <Select
-                              value={form.status || undefined}
-                              onValueChange={(v) => updateForm("status", v)}
-                            >
-                              <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Owned">Owned</SelectItem>
-                                <SelectItem value="Wishlist">Wishlist</SelectItem>
-                                <SelectItem value="Decluttered">Decluttered</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Best for</Label>
-                            <Select
-                              value={form.occasion || undefined}
-                              onValueChange={(v) => updateForm("occasion", v)}
-                            >
-                              <SelectTrigger className="rounded-2xl border-rose-100">
-                                <SelectValue placeholder="Select best use" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Daily">Daily</SelectItem>
-                                <SelectItem value="Office">Office</SelectItem>
-                                <SelectItem value="Evening">Evening</SelectItem>
-                                <SelectItem value="Party">Party</SelectItem>
-                                <SelectItem value="Anytime">Anytime</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                          <Label>Purchase date</Label>
-                          <Input
-                            type="date"
-                            value={form.purchaseDate}
-                            onChange={(e) => updateForm("purchaseDate", e.target.value)}
-                            className="rounded-2xl border-rose-100"
-                          />
-                        </div>
-
-                        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <Label>Photo 1</Label>
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => setImageFile1(e.target.files?.[0] ?? null)}
-                              className="rounded-2xl border-rose-100"
-                            />
-                            {form.image_url_1 ? (
-                              <p className="text-xs text-slate-500">Existing photo saved</p>
-                            ) : null}
-                            {imageFile1 ? (
-                              <p className="text-xs text-slate-500">{imageFile1.name}</p>
-                            ) : null}
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label>Photo 2</Label>
-                            <Input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => setImageFile2(e.target.files?.[0] ?? null)}
-                              className="rounded-2xl border-rose-100"
-                            />
-                            {form.image_url_2 ? (
-                              <p className="text-xs text-slate-500">Existing photo saved</p>
-                            ) : null}
-                            {imageFile2 ? (
-                              <p className="text-xs text-slate-500">{imageFile2.name}</p>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                          <Label>Notes</Label>
-                          <Textarea
-                            value={form.notes}
-                            onChange={(e) => updateForm("notes", e.target.value)}
-                            placeholder="Add dupes, wear time, where you bought it, special memories, etc."
-                            className="min-h-[110px] rounded-2xl border-rose-100"
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <Button
-                          onClick={() => void saveLipstick()}
-                          disabled={isSaving}
-                          className="w-full rounded-2xl sm:flex-1"
-                        >
-                          {isEditing ? (
-                            <>
-                              <Pencil className="mr-2 h-4 w-4" />
-                              {isSaving ? "Updating..." : "Update Lipstick"}
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-2 h-4 w-4" />
-                              {isSaving ? "Saving..." : "Save Lipstick"}
-                            </>
-                          )}
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          onClick={handleCancelForm}
-                          disabled={isSaving}
-                          className="w-full rounded-2xl border-rose-100 sm:w-auto"
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
+        <div className="space-y-4">
+          {loading ? (
+            <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+              <CardContent className="p-5">Loading...</CardContent>
             </Card>
-          </motion.div>
+          ) : visibleItems.length === 0 ? (
+            <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+              <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center">
+                <div className="rounded-full bg-rose-50 p-4">
+                  <Package2 className="h-10 w-10 text-rose-300" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-medium">No lipsticks match this view</h3>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Try changing your filters or add a new shade to your library.
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100"
+                    onClick={() => clearFilters()}
+                  >
+                    Clear Filters
+                  </Button>
+                  <Button className="rounded-2xl" onClick={startAddLipstick}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add a lipstick
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            visibleItems.map((item, index) => {
+              const isOwnedByYou = session.user.id === item.ownerUserId;
+              const isExpanded = expandedItems.includes(item.id);
+              const isDeleted = !!item.deletedAt;
+              const colorData = getColorData(item.colorFamily);
+              const deletedDaysAgo = item.deletedAt
+                ? Math.floor(
+                  (Date.now() - new Date(item.deletedAt).getTime()) /
+                  (1000 * 60 * 60 * 24)
+                )
+                : null;
 
-          <div className="space-y-4">
-            {loading ? (
-              <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
-                <CardContent className="p-5">Loading...</CardContent>
-              </Card>
-            ) : visibleItems.length === 0 ? (
-              <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
-                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center">
-                  <div className="rounded-full bg-rose-50 p-4">
-                    <Package2 className="h-10 w-10 text-rose-300" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-medium">No lipsticks match this view</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Try changing your filters or add a new shade to your library.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="rounded-2xl border-rose-100"
-                      onClick={() => clearFilters()}
-                    >
-                      Clear Filters
-                    </Button>
-                    <Button className="rounded-2xl" onClick={startAddLipstick}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add a lipstick
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              visibleItems.map((item, index) => {
-                const isOwnedByYou = session.user.id === item.ownerUserId;
-                const isExpanded = expandedItems.includes(item.id);
-                const isDeleted = !!item.deletedAt;
-                const colorData = getColorData(item.colorFamily);
-                const deletedDaysAgo = item.deletedAt
-                  ? Math.floor(
-                    (Date.now() - new Date(item.deletedAt).getTime()) /
-                    (1000 * 60 * 60 * 24)
-                  )
+              const daysRemaining =
+                item.deletedAt && deletedDaysAgo !== null
+                  ? Math.max(0, 30 - deletedDaysAgo)
                   : null;
 
-                const daysRemaining =
-                  item.deletedAt && deletedDaysAgo !== null
-                    ? Math.max(0, 30 - deletedDaysAgo)
-                    : null;
-
-                return (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: index * 0.03 }}
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25, delay: index * 0.03 }}
+                >
+                  <Card
+                    className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
                   >
-                    <Card
-                      className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
-                    >
-                      <CardContent className="p-4 md:p-5">
-                        <div
-                          className="flex cursor-pointer flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
-                          onClick={() => toggleExpanded(item.id)}
-                        >
-                          <div className="min-w-0 space-y-4">
-                            <div className="flex flex-wrap items-center gap-2">
-                              {item.colorFamily ? (
-                                <Badge className="rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
-                                  {item.colorFamily}
-                                </Badge>
-                              ) : null}
+                    <CardContent className="p-4 md:p-5">
+                      <div
+                        className="flex cursor-pointer flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
+                        onClick={() => toggleExpanded(item.id)}
+                      >
+                        <div className="min-w-0 space-y-4">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {item.colorFamily ? (
+                              <Badge className="rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
+                                {item.colorFamily}
+                              </Badge>
+                            ) : null}
 
+                            <Badge
+                              variant="outline"
+                              className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                            >
+                              {isOwnedByYou ? "Owned" : "Shared"}
+                            </Badge>
+
+                            {item.favorite ? (
+                              <Badge variant="outline" className="rounded-full border-rose-200 text-rose-600">
+                                Favorite
+                              </Badge>
+                            ) : null}
+
+                            {isDeleted ? (
                               <Badge
                                 variant="outline"
-                                className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                                className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
                               >
-                                {isOwnedByYou ? "Owned" : "Shared"}
+                                In Trash
                               </Badge>
-
-                              {item.favorite ? (
-                                <Badge variant="outline" className="rounded-full border-rose-200 text-rose-600">
-                                  Favorite
-                                </Badge>
-                              ) : null}
-
-                              {isDeleted ? (
-                                <Badge
-                                  variant="outline"
-                                  className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
-                                >
-                                  In Trash
-                                </Badge>
-                              ) : null}
-                            </div>
-
-                            <div>
-                              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
-                                {item.shade}
-                              </h2>
-                              <p className="mt-1 text-base text-zinc-500">{item.brand}</p>
-                            </div>
-
-                            <p className="max-w-2xl text-sm leading-6 text-zinc-500">
-                              {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
-                            </p>
+                            ) : null}
                           </div>
 
-                          <div className="flex items-center gap-2 self-end lg:self-center">
+                          <div>
+                            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
+                              {item.shade}
+                            </h2>
+                            <p className="mt-1 text-base text-zinc-500">{item.brand}</p>
+                          </div>
+
+                          <p className="max-w-2xl text-sm leading-6 text-zinc-500">
+                            {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end lg:self-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            disabled={isDeleted}
+                            className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
+                              }`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void toggleFavorite(item.id);
+                            }}
+                            title="Favorite"
+                          >
+                            <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
+                          </Button>
+
+                          {isOwnedByYou && !isDeleted && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEditLipstick(item);
+                                }}
+                                title="Edit"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShareModalItem(item);
+                                }}
+                                title="Share"
+                              >
+                                <Share2 className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void deleteOwnedLipstick(item.id);
+                                }}
+                                title="Move to Trash"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+
+                          {!isOwnedByYou && !isDeleted ? (
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={isDeleted}
-                              className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
-                                }`}
+                              variant="outline"
+                              className="rounded-2xl border-rose-100 bg-white/95"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                void toggleFavorite(item.id);
+                                void removeSharedLipstick(item.id);
                               }}
-                              title="Favorite"
                             >
-                              <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
+                              <X className="mr-2 h-4 w-4" />
+                              Remove
                             </Button>
+                          ) : null}
 
-                            {isOwnedByYou && !isDeleted && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    startEditLipstick(item);
-                                  }}
-                                  title="Edit"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShareModalItem(item);
-                                  }}
-                                  title="Share"
-                                >
-                                  <Share2 className="h-4 w-4" />
-                                </Button>
-
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void deleteOwnedLipstick(item.id);
-                                  }}
-                                  title="Move to Trash"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </>
-                            )}
-
-                            {!isOwnedByYou && !isDeleted ? (
+                          {isOwnedByYou && isDeleted ? (
+                            <>
                               <Button
                                 variant="outline"
                                 className="rounded-2xl border-rose-100 bg-white/95"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  void removeSharedLipstick(item.id);
+                                  void restoreLipstick(item.id);
                                 }}
                               >
-                                <X className="mr-2 h-4 w-4" />
-                                Remove
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Restore
                               </Button>
-                            ) : null}
 
-                            {isOwnedByYou && isDeleted ? (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/95"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void restoreLipstick(item.id);
-                                  }}
-                                >
-                                  <RotateCcw className="mr-2 h-4 w-4" />
-                                  Restore
-                                </Button>
+                              <Button
+                                variant="outline"
+                                className="rounded-2xl border-rose-100 bg-white/95"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void permanentlyDeleteLipstick(item.id);
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete Forever
+                              </Button>
+                            </>
+                          ) : null}
 
-                                <Button
-                                  variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/95"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void permanentlyDeleteLipstick(item.id);
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Forever
-                                </Button>
-                              </>
-                            ) : null}
-
-                            <Button
-                              variant="outline"
-                              className="rounded-2xl border-rose-100 bg-white/95 px-4"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleExpanded(item.id);
-                              }}
-                              title={isExpanded ? "Collapse" : "Expand"}
-                            >
-                              {isExpanded ? "Hide details" : "View details"}
-                              {isExpanded ? (
-                                <ChevronUp className="ml-2 h-4 w-4" />
-                              ) : (
-                                <ChevronDown className="ml-2 h-4 w-4" />
-                              )}
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            className="rounded-2xl border-rose-100 bg-white/95 px-4"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleExpanded(item.id);
+                            }}
+                            title={isExpanded ? "Collapse" : "Expand"}
+                          >
+                            {isExpanded ? "Hide details" : "View details"}
+                            {isExpanded ? (
+                              <ChevronUp className="ml-2 h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="ml-2 h-4 w-4" />
+                            )}
+                          </Button>
                         </div>
+                      </div>
 
-                        <AnimatePresence initial={false}>
-                          {isExpanded ? (
-                            <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: "auto" }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden"
-                            >
-                              <div className="mt-6 space-y-5 rounded-[24px] border border-rose-100/70 bg-rose-50/35 p-4 md:p-5">
-                                {item.image_url_1 || item.image_url_2 ? (
-                                  <div className="flex flex-wrap gap-3">
-                                    {item.image_url_1 ? (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setPreviewImageUrl(item.image_url_1);
-                                        }}
-                                        className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
-                                      >
-                                        <img
-                                          src={item.image_url_1}
-                                          alt="Lipstick photo 1"
-                                          className="h-24 w-24 object-cover"
-                                        />
-                                      </button>
-                                    ) : null}
-
-                                    {item.image_url_2 ? (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setPreviewImageUrl(item.image_url_2);
-                                        }}
-                                        className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
-                                      >
-                                        <img
-                                          src={item.image_url_2}
-                                          alt="Lipstick photo 2"
-                                          className="h-24 w-24 object-cover"
-                                        />
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                ) : null}
-
-                                <div className="flex flex-wrap gap-2">
-                                  <Badge className="rounded-full">
-                                    {item.status || "No status"}
-                                  </Badge>
-
-                                  <Badge
-                                    variant="outline"
-                                    className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
-                                  >
-                                    {isOwnedByYou ? "In your collection" : "Shared with you"}
-                                  </Badge>
-
-                                  {isDeleted ? (
-                                    <Badge
-                                      variant="outline"
-                                      className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
-                                    >
-                                      In Trash
-                                    </Badge>
-                                  ) : null}
-
-                                  {item.type ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.type}
-                                    </Badge>
-                                  ) : null}
-
-                                  {item.finish ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.finish}
-                                    </Badge>
-                                  ) : null}
-
-                                  {item.undertone ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.undertone}
-                                    </Badge>
-                                  ) : null}
-
-                                  {item.colorFamily ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      {item.colorFamily}
-                                    </Badge>
-                                  ) : null}
-
-                                  {item.favorite ? (
-                                    <Badge variant="secondary" className="rounded-full">
-                                      Favorite
-                                    </Badge>
-                                  ) : null}
-                                </div>
-
-                                <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                                  <div className="flex items-center gap-2">
-                                    <Sparkles className="h-4 w-4" /> Best for: {item.occasion || "Not added"}
-                                  </div>
-
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="h-4 w-4" />
-                                    {item.purchaseDate || "No date added"}
-                                  </div>
-
-                                  <div className="flex items-center gap-2 sm:col-span-2">
-                                    <Tag className="h-4 w-4" />
-                                    {item.notes || "No notes added yet."}
-                                  </div>
-
-                                  {item.barcode ? (
-                                    <div className="flex items-center gap-2 sm:col-span-2">
-                                      <Tag className="h-4 w-4" />
-                                      Barcode: {item.barcode}
-                                    </div>
-                                  ) : null}
-                                </div>
-
-                                <div className="flex flex-wrap items-center gap-3">
-                                  {!isDeleted ? (
-                                    <Button
-                                      variant={compareIds.includes(item.id) ? "default" : "outline"}
-                                      className="rounded-2xl border-rose-100"
+                      <AnimatePresence initial={false}>
+                        {isExpanded ? (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="mt-6 space-y-5 rounded-[24px] border border-rose-100/70 bg-rose-50/35 p-4 md:p-5">
+                              {item.image_url_1 || item.image_url_2 ? (
+                                <div className="flex flex-wrap gap-3">
+                                  {item.image_url_1 ? (
+                                    <button
+                                      type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
-                                        toggleCompareSelection(item.id);
+                                        setPreviewImageUrl(item.image_url_1);
                                       }}
+                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
                                     >
-                                      {compareIds.includes(item.id) ? "Selected" : "Compare"}
-                                    </Button>
+                                      <img
+                                        src={item.image_url_1}
+                                        alt="Lipstick photo 1"
+                                        className="h-24 w-24 object-cover"
+                                      />
+                                    </button>
                                   ) : null}
 
-                                  {isDeleted && deletedDaysAgo !== null ? (
-                                    <p className="text-sm text-slate-600">
-                                      Deleted {deletedDaysAgo} day{deletedDaysAgo === 1 ? "" : "s"} ago.
-                                    </p>
-                                  ) : null}
-
-                                  {isDeleted && daysRemaining !== null ? (
-                                    <p className="text-sm text-slate-600">
-                                      {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before permanent cleanup.
-                                    </p>
+                                  {item.image_url_2 ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPreviewImageUrl(item.image_url_2);
+                                      }}
+                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                    >
+                                      <img
+                                        src={item.image_url_2}
+                                        alt="Lipstick photo 2"
+                                        className="h-24 w-24 object-cover"
+                                      />
+                                    </button>
                                   ) : null}
                                 </div>
+                              ) : null}
 
+                              <div className="flex flex-wrap gap-2">
+                                <Badge className="rounded-full">
+                                  {item.status || "No status"}
+                                </Badge>
 
+                                <Badge
+                                  variant="outline"
+                                  className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                                >
+                                  {isOwnedByYou ? "In your collection" : "Shared with you"}
+                                </Badge>
+
+                                {isDeleted ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                  >
+                                    In Trash
+                                  </Badge>
+                                ) : null}
+
+                                {item.type ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.type}
+                                  </Badge>
+                                ) : null}
+
+                                {item.finish ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.finish}
+                                  </Badge>
+                                ) : null}
+
+                                {item.undertone ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.undertone}
+                                  </Badge>
+                                ) : null}
+
+                                {item.colorFamily ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.colorFamily}
+                                  </Badge>
+                                ) : null}
+
+                                {item.favorite ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    Favorite
+                                  </Badge>
+                                ) : null}
                               </div>
-                            </motion.div>
-                          ) : null}
-                        </AnimatePresence>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
 
-              })
-            )}
-          </div>
+                              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4" /> Best for: {item.occasion || "Not added"}
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  {item.purchaseDate || "No date added"}
+                                </div>
+
+                                <div className="flex items-center gap-2 sm:col-span-2">
+                                  <Tag className="h-4 w-4" />
+                                  {item.notes || "No notes added yet."}
+                                </div>
+
+                                {item.barcode ? (
+                                  <div className="flex items-center gap-2 sm:col-span-2">
+                                    <Tag className="h-4 w-4" />
+                                    Barcode: {item.barcode}
+                                  </div>
+                                ) : null}
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-3">
+                                {!isDeleted ? (
+                                  <Button
+                                    variant={compareIds.includes(item.id) ? "default" : "outline"}
+                                    className="rounded-2xl border-rose-100"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleCompareSelection(item.id);
+                                    }}
+                                  >
+                                    {compareIds.includes(item.id) ? "Selected" : "Compare"}
+                                  </Button>
+                                ) : null}
+
+                                {isDeleted && deletedDaysAgo !== null ? (
+                                  <p className="text-sm text-slate-600">
+                                    Deleted {deletedDaysAgo} day{deletedDaysAgo === 1 ? "" : "s"} ago.
+                                  </p>
+                                ) : null}
+
+                                {isDeleted && daysRemaining !== null ? (
+                                  <p className="text-sm text-slate-600">
+                                    {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before permanent cleanup.
+                                  </p>
+                                ) : null}
+                              </div>
+
+
+                            </div>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              );
+
+            })
+          )}
         </div>
       </div>
     </div>
+    </div >
   );
 }
