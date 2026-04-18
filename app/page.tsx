@@ -1840,7 +1840,13 @@ export default function LipstickCatalogApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-white px-3 py-4 sm:px-4 sm:py-6 md:p-8">
+    <div
+      className="min-h-screen px-3 py-4 sm:px-4 sm:py-6 md:p-8"
+      style={{
+        background:
+          "radial-gradient(circle at top left, rgba(251,207,232,0.35), transparent 25%), radial-gradient(circle at top right, rgba(233,213,255,0.28), transparent 22%), linear-gradient(to bottom right, #fff7fb, #fffdfd, #fff7fb)",
+      }}
+    >
       <div className="mx-auto max-w-7xl space-y-5 md:space-y-6">
         <input
           ref={fileInputRef}
@@ -2100,64 +2106,67 @@ export default function LipstickCatalogApp() {
           </div>
         ) : null}
 
-        <motion.div
+        <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="overflow-hidden rounded-[30px] border border-rose-100 bg-white/95 shadow-lg shadow-rose-100/30"
+          className="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 shadow-[0_20px_80px_rgba(244,114,182,0.10)] backdrop-blur-xl"
         >
-          <div className="h-2 bg-gradient-to-r from-rose-200 via-pink-200 to-fuchsia-200" />
-          <div className="space-y-5 p-4 md:p-6">
-            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-              <div className="space-y-2">
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-                    My Lipstick Library
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Track shades, filter faster, and keep your collection beautifully organized.
+          <div className="h-1.5 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300" />
+
+          <div className="grid gap-6 p-5 md:p-7 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-rose-500">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Your curated collection
+                  </div>
+
+                  <div>
+                    <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+                      My Lipstick Library
+                    </h1>
+                    <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 md:text-base">
+                      Organize your shades, surface favorites faster, and enjoy a more
+                      editorial, premium view of your collection.
+                    </p>
+                  </div>
+
+                  <p className="text-sm text-zinc-400">
+                    Signed in as {session.user.email}
                   </p>
                 </div>
-                <p className="text-sm text-slate-500">Signed in as {session.user.email}</p>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button className="rounded-2xl bg-zinc-950 px-5 text-white hover:bg-zinc-800" onClick={startAddLipstick}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add lipstick
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="rounded-2xl border-rose-100 bg-white/90"
+                    disabled={isScanning}
+                    onClick={() => setIsBarcodeScannerOpen(true)}
+                  >
+                    {isScanning ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Camera className="mr-2 h-4 w-4" />
+                    )}
+                    {isScanning ? "Scanning..." : "Scan"}
+                  </Button>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-                <div className="rounded-2xl border border-rose-100 bg-rose-50/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Owned</p>
-                  <p className="mt-1 text-xl font-semibold">{totalOwned}</p>
-                </div>
-                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Shared</p>
-                  <p className="mt-1 text-xl font-semibold">{totalShared}</p>
-                </div>
-                <div className="rounded-2xl border border-pink-100 bg-pink-50/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Favorites</p>
-                  <p className="mt-1 flex items-center gap-1 text-xl font-semibold">
-                    <Heart className="h-4 w-4 fill-current" />
-                    {totalFavorites}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Trash</p>
-                  <p className="mt-1 text-xl font-semibold">{totalTrash}</p>
-                </div>
-                <div className="rounded-2xl border border-fuchsia-100 bg-fuchsia-50/70 p-3">
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Total</p>
-                  <p className="mt-1 text-xl font-semibold">
-                    {items.filter((x) => !x.deletedAt).length}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
               <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-4 h-5 w-5 text-slate-400" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by brand, shade, color family, or notes..."
-                  className="h-14 rounded-2xl border-rose-100 bg-white pl-12 text-base shadow-sm"
+                  placeholder="Search by shade, brand, finish, notes..."
+                  className="h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm placeholder:text-zinc-400"
                 />
               </div>
 
@@ -2165,28 +2174,35 @@ export default function LipstickCatalogApp() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
-                    className="rounded-full"
+                    className={`rounded-full px-5 ${quickTab === "all" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                      }`}
                     onClick={() => setQuickTab("all")}
                   >
                     All
                   </Button>
+
                   <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
-                    className="rounded-full"
+                    className={`rounded-full px-5 ${quickTab === "owned" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                      }`}
                     onClick={() => setQuickTab("owned")}
                   >
                     Owned
                   </Button>
+
                   <Button
                     variant={quickTab === "shared" ? "default" : "outline"}
-                    className="rounded-full"
+                    className={`rounded-full px-5 ${quickTab === "shared" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                      }`}
                     onClick={() => setQuickTab("shared")}
                   >
                     Shared
                   </Button>
+
                   <Button
                     variant={quickTab === "trash" ? "default" : "outline"}
-                    className="rounded-full"
+                    className={`rounded-full px-5 ${quickTab === "trash" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                      }`}
                     onClick={() => setQuickTab("trash")}
                   >
                     Trash
@@ -2196,7 +2212,7 @@ export default function LipstickCatalogApp() {
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100"
+                    className="rounded-2xl border-rose-100 bg-white/90"
                     onClick={() => setIsFiltersOpen((prev) => !prev)}
                   >
                     <Funnel className="mr-2 h-4 w-4" />
@@ -2210,7 +2226,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100"
+                    className="rounded-2xl border-rose-100 bg-white/90"
                     onClick={() => clearFilters()}
                   >
                     <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -2219,7 +2235,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100"
+                    className="rounded-2xl border-rose-100 bg-white/90"
                     onClick={() => void handleRefreshView()}
                   >
                     <RotateCcw className="mr-2 h-4 w-4" />
@@ -2228,30 +2244,16 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100"
-                    disabled={isScanning}
-                    onClick={() => setIsBarcodeScannerOpen(true)}
-                  >
-                    {isScanning ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Camera className="mr-2 h-4 w-4" />
-                    )}
-                    {isScanning ? "Scanning..." : "Scan Barcode"}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-rose-100"
+                    className="rounded-2xl border-rose-100 bg-white/90"
                     onClick={exportVisibleItemsToCsv}
                   >
                     <Download className="mr-2 h-4 w-4" />
-                    Export CSV
+                    Export
                   </Button>
 
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100"
+                    className="rounded-2xl border-rose-100 bg-white/90"
                     onClick={() => void handleSignOut()}
                   >
                     <LogOut className="mr-2 h-4 w-4" />
@@ -2259,160 +2261,181 @@ export default function LipstickCatalogApp() {
                   </Button>
                 </div>
               </div>
+            </div>
 
-              <AnimatePresence initial={false}>
-                {isFiltersOpen ? (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden rounded-3xl border border-rose-100 bg-rose-50/50 p-4"
-                  >
-                    <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                      <div className="flex items-center gap-2">
-                        <Funnel className="h-4 w-4 text-slate-500" />
-                        <p className="text-sm font-medium">Refine your view</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <ArrowUpDown className="h-4 w-4 text-slate-500" />
-                        <Select value={sortBy} onValueChange={setSortBy}>
-                          <SelectTrigger className="w-[180px] rounded-2xl border-rose-100 bg-white">
-                            <SelectValue placeholder="Sort by" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="newest">Newest first</SelectItem>
-                            <SelectItem value="oldest">Oldest first</SelectItem>
-                            <SelectItem value="brand-az">Brand A-Z</SelectItem>
-                            <SelectItem value="brand-za">Brand Z-A</SelectItem>
-                            <SelectItem value="shade-az">Shade A-Z</SelectItem>
-                            <SelectItem value="favorites-first">Favorites first</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                  Owned
+                </p>
+                <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+                  {totalOwned}
+                </p>
+                <p className="mt-2 text-sm text-zinc-500">In your collection</p>
+              </div>
 
-                    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                      <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All types</SelectItem>
-                          <SelectItem value="Bullet">Bullet</SelectItem>
-                          <SelectItem value="Liquid">Liquid</SelectItem>
-                          <SelectItem value="Tint">Tint</SelectItem>
-                          <SelectItem value="Gloss">Gloss</SelectItem>
-                          <SelectItem value="Balm">Balm</SelectItem>
-                        </SelectContent>
-                      </Select>
+              <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-amber-50/65 p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                  Shared
+                </p>
+                <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+                  {totalShared}
+                </p>
+                <p className="mt-2 text-sm text-zinc-500">Shared with you</p>
+              </div>
 
-                      <Select value={finishFilter} onValueChange={setFinishFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Finish" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All finishes</SelectItem>
-                          <SelectItem value="Matte">Matte</SelectItem>
-                          <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                          <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                          <SelectItem value="Satin">Satin</SelectItem>
-                          <SelectItem value="Glossy">Glossy</SelectItem>
-                          <SelectItem value="Sheer">Sheer</SelectItem>
-                          <SelectItem value="Tint">Tint</SelectItem>
-                        </SelectContent>
-                      </Select>
+              <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                  Favorites
+                </p>
+                <p className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
+                  <Heart className="h-5 w-5 fill-current text-rose-500" />
+                  {totalFavorites}
+                </p>
+                <p className="mt-2 text-sm text-zinc-500">{favoritesPercent}% of active library</p>
+              </div>
 
-                      <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Undertone" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All undertones</SelectItem>
-                          <SelectItem value="Warm">Warm</SelectItem>
-                          <SelectItem value="Cool">Cool</SelectItem>
-                          <SelectItem value="Neutral">Neutral</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Color family" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All color families</SelectItem>
-                          <SelectItem value="Red">Red</SelectItem>
-                          <SelectItem value="Pink">Pink</SelectItem>
-                          <SelectItem value="Berry">Berry</SelectItem>
-                          <SelectItem value="Brown">Brown</SelectItem>
-                          <SelectItem value="Nude">Nude</SelectItem>
-                          <SelectItem value="Coral">Coral</SelectItem>
-                          <SelectItem value="Mauve">Mauve</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All statuses</SelectItem>
-                          <SelectItem value="Owned">Owned</SelectItem>
-                          <SelectItem value="Wishlist">Wishlist</SelectItem>
-                          <SelectItem value="Decluttered">Decluttered</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Ownership" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All lipsticks</SelectItem>
-                          <SelectItem value="owned">Owned by you</SelectItem>
-                          <SelectItem value="shared">Shared with you</SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      <Select value={favoritesFilter} onValueChange={setFavoritesFilter}>
-                        <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                          <SelectValue placeholder="Favorites" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All favorites</SelectItem>
-                          <SelectItem value="favorites">Favorites only</SelectItem>
-                          <SelectItem value="nonfavorites">Non-favorites</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-              {compareIds.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-rose-100 bg-white/90 p-3">
-                  <p className="text-sm text-slate-600">
-                    {compareIds.length} lipstick{compareIds.length === 1 ? "" : "s"} selected for compare
-                  </p>
-
-                  <Button
-                    onClick={openCompare}
-                    disabled={compareIds.length !== 2}
-                    className="rounded-2xl"
-                  >
-                    Compare
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    onClick={clearCompare}
-                    className="rounded-2xl border-rose-100"
-                  >
-                    Clear
-                  </Button>
-                </div>
-              ) : null}
+              <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-fuchsia-50/65 p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                  Total Active
+                </p>
+                <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+                  {totalActive}
+                </p>
+                <p className="mt-2 text-sm text-zinc-500">{totalWishlist} on wishlist</p>
+              </div>
             </div>
           </div>
-        </motion.div>
+
+          <AnimatePresence initial={false}>
+            {isFiltersOpen ? (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden border-t border-rose-100/70 bg-rose-50/35 px-5 py-4 md:px-7"
+              >
+                <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-center gap-2">
+                    <Funnel className="h-4 w-4 text-zinc-500" />
+                    <p className="text-sm font-medium text-zinc-700">Refine your library</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <ArrowUpDown className="h-4 w-4 text-zinc-500" />
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[180px] rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Sort by" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="newest">Newest first</SelectItem>
+                        <SelectItem value="oldest">Oldest first</SelectItem>
+                        <SelectItem value="brand-az">Brand A-Z</SelectItem>
+                        <SelectItem value="brand-za">Brand Z-A</SelectItem>
+                        <SelectItem value="shade-az">Shade A-Z</SelectItem>
+                        <SelectItem value="favorites-first">Favorites first</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <Select value={typeFilter} onValueChange={setTypeFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="Bullet">Bullet</SelectItem>
+                      <SelectItem value="Liquid">Liquid</SelectItem>
+                      <SelectItem value="Tint">Tint</SelectItem>
+                      <SelectItem value="Gloss">Gloss</SelectItem>
+                      <SelectItem value="Balm">Balm</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={finishFilter} onValueChange={setFinishFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Finish" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All finishes</SelectItem>
+                      <SelectItem value="Matte">Matte</SelectItem>
+                      <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
+                      <SelectItem value="Soft Matte">Soft Matte</SelectItem>
+                      <SelectItem value="Satin">Satin</SelectItem>
+                      <SelectItem value="Glossy">Glossy</SelectItem>
+                      <SelectItem value="Sheer">Sheer</SelectItem>
+                      <SelectItem value="Tint">Tint</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Undertone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All undertones</SelectItem>
+                      <SelectItem value="Warm">Warm</SelectItem>
+                      <SelectItem value="Cool">Cool</SelectItem>
+                      <SelectItem value="Neutral">Neutral</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Color family" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All color families</SelectItem>
+                      <SelectItem value="Red">Red</SelectItem>
+                      <SelectItem value="Pink">Pink</SelectItem>
+                      <SelectItem value="Berry">Berry</SelectItem>
+                      <SelectItem value="Brown">Brown</SelectItem>
+                      <SelectItem value="Nude">Nude</SelectItem>
+                      <SelectItem value="Coral">Coral</SelectItem>
+                      <SelectItem value="Mauve">Mauve</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="Owned">Owned</SelectItem>
+                      <SelectItem value="Wishlist">Wishlist</SelectItem>
+                      <SelectItem value="Decluttered">Decluttered</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Ownership" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All lipsticks</SelectItem>
+                      <SelectItem value="owned">Owned by you</SelectItem>
+                      <SelectItem value="shared">Shared with you</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={favoritesFilter} onValueChange={setFavoritesFilter}>
+                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                      <SelectValue placeholder="Favorites" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All favorites</SelectItem>
+                      <SelectItem value="favorites">Favorites only</SelectItem>
+                      <SelectItem value="nonfavorites">Non-favorites</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </motion.section>
 
 
         <div className="grid gap-5 lg:grid-cols-[360px_minmax(0,1fr)]">
@@ -2755,24 +2778,63 @@ export default function LipstickCatalogApp() {
                     transition={{ duration: 0.25, delay: index * 0.03 }}
                   >
                     <Card
-                      className={`overflow-hidden rounded-[28px] border bg-gradient-to-r ${colorData.soft} shadow-sm transition-all hover:shadow-md ${colorData.ring}`}
+                      className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
                     >
                       <CardContent className="p-4 md:p-5">
                         <div
-                          className="flex cursor-pointer flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                          className="flex cursor-pointer flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
                           onClick={() => toggleExpanded(item.id)}
                         >
-                          <div className="min-w-0">
-                            <h2 className="text-2xl font-semibold tracking-tight">{item.shade}</h2>
-                            <p className="mt-1 text-sm text-slate-600">{item.brand}</p>
+                          <div className="min-w-0 space-y-4">
+                            <div className="flex flex-wrap items-center gap-2">
+                              {item.colorFamily ? (
+                                <Badge className="rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
+                                  {item.colorFamily}
+                                </Badge>
+                              ) : null}
+
+                              <Badge
+                                variant="outline"
+                                className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                              >
+                                {isOwnedByYou ? "Owned" : "Shared"}
+                              </Badge>
+
+                              {item.favorite ? (
+                                <Badge variant="outline" className="rounded-full border-rose-200 text-rose-600">
+                                  Favorite
+                                </Badge>
+                              ) : null}
+
+                              {isDeleted ? (
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                >
+                                  In Trash
+                                </Badge>
+                              ) : null}
+                            </div>
+
+                            <div>
+                              <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
+                                {item.shade}
+                              </h2>
+                              <p className="mt-1 text-base text-zinc-500">{item.brand}</p>
+                            </div>
+
+                            <p className="max-w-2xl text-sm leading-6 text-zinc-500">
+                              {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
+                            </p>
                           </div>
 
-                          <div className="flex items-center gap-1 self-end sm:self-auto">
+                          <div className="flex items-center gap-2 self-end lg:self-center">
                             <Button
                               variant="ghost"
                               size="icon"
                               disabled={isDeleted}
-                              className={`rounded-full ${item.favorite ? "text-rose-500" : "text-slate-400"}`}
+                              className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
+                                }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 void toggleFavorite(item.id);
@@ -2782,38 +2844,12 @@ export default function LipstickCatalogApp() {
                               <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
                             </Button>
 
-                            {isOwnedByYou && isDeleted && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/70"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void restoreLipstick(item.id);
-                                  }}
-                                >
-                                  <RotateCcw className="mr-2 h-4 w-4" /> Restore
-                                </Button>
-
-                                <Button
-                                  variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/70"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    void permanentlyDeleteLipstick(item.id);
-                                  }}
-                                >
-                                  <Trash2 className="mr-2 h-4 w-4" /> Delete Forever
-                                </Button>
-                              </>
-                            )}
-
                             {isOwnedByYou && !isDeleted && (
                               <>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="rounded-full"
+                                  className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     startEditLipstick(item);
@@ -2826,7 +2862,7 @@ export default function LipstickCatalogApp() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="rounded-full"
+                                  className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setShareModalItem(item);
@@ -2839,7 +2875,7 @@ export default function LipstickCatalogApp() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="rounded-full"
+                                  className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void deleteOwnedLipstick(item.id);
@@ -2851,33 +2887,62 @@ export default function LipstickCatalogApp() {
                               </>
                             )}
 
-                            {!isOwnedByYou && (
+                            {!isOwnedByYou && !isDeleted ? (
                               <Button
                                 variant="outline"
-                                className="rounded-2xl border-rose-100 bg-white/70"
+                                className="rounded-2xl border-rose-100 bg-white/95"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   void removeSharedLipstick(item.id);
                                 }}
                               >
-                                <X className="mr-2 h-4 w-4" /> Remove
+                                <X className="mr-2 h-4 w-4" />
+                                Remove
                               </Button>
-                            )}
+                            ) : null}
+
+                            {isOwnedByYou && isDeleted ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/95"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void restoreLipstick(item.id);
+                                  }}
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Restore
+                                </Button>
+
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/95"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void permanentlyDeleteLipstick(item.id);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Forever
+                                </Button>
+                              </>
+                            ) : null}
 
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="rounded-full"
+                              variant="outline"
+                              className="rounded-2xl border-rose-100 bg-white/95 px-4"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpanded(item.id);
                               }}
                               title={isExpanded ? "Collapse" : "Expand"}
                             >
+                              {isExpanded ? "Hide details" : "View details"}
                               {isExpanded ? (
-                                <ChevronUp className="h-5 w-5" />
+                                <ChevronUp className="ml-2 h-4 w-4" />
                               ) : (
-                                <ChevronDown className="h-5 w-5" />
+                                <ChevronDown className="ml-2 h-4 w-4" />
                               )}
                             </Button>
                           </div>
@@ -2891,7 +2956,7 @@ export default function LipstickCatalogApp() {
                               exit={{ opacity: 0, height: 0 }}
                               className="overflow-hidden"
                             >
-                              <div className="mt-5 space-y-4">
+                              <div className="mt-6 space-y-5 rounded-[24px] border border-rose-100/70 bg-rose-50/35 p-4 md:p-5">
                                 {item.image_url_1 || item.image_url_2 ? (
                                   <div className="flex flex-wrap gap-3">
                                     {item.image_url_1 ? (
