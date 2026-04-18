@@ -99,6 +99,7 @@ const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
 const REMEMBER_ME_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = "lipstick_remember_me";
+const LAST_EMAIL_KEY = "lipstick_last_email";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
@@ -513,6 +514,13 @@ export default function LipstickCatalogApp() {
     return () => {
       if (noticeTimeoutRef.current) clearTimeout(noticeTimeoutRef.current);
     };
+  }, []);
+
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(LAST_EMAIL_KEY);
+    if (savedEmail) {
+      setEmail(savedEmail);
+    }
   }, []);
 
   useEffect(() => {
@@ -950,6 +958,8 @@ export default function LipstickCatalogApp() {
         await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
       }
 
+      localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
+
       setEmail(normalizedEmail);
       setPassword("");
       setAuthMessage(
@@ -974,6 +984,7 @@ export default function LipstickCatalogApp() {
       await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+      localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
 
       setEmail(normalizedEmail);
       setPassword("");
@@ -1716,7 +1727,10 @@ export default function LipstickCatalogApp() {
                         id="email"
                         type="email"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setAuthMessage("");
+                        }}
                         placeholder="you@example.com"
                         className="h-12 rounded-2xl border-rose-100 bg-white pl-11 text-base shadow-sm placeholder:text-zinc-400"
                       />
@@ -1746,7 +1760,10 @@ export default function LipstickCatalogApp() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          setAuthMessage("");
+                        }}
                         placeholder="Enter your password"
                         className="h-12 rounded-2xl border-rose-100 bg-white pl-11 pr-12 text-base shadow-sm placeholder:text-zinc-400"
                       />
