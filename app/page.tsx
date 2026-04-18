@@ -2429,6 +2429,15 @@ export default function LipstickCatalogApp() {
                 </div>
               </div>
 
+              <Button
+                variant="ghost"
+                className="rounded-2xl text-zinc-500 hover:bg-rose-50"
+                onClick={() => void handleSignOut()}
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </Button>
+
               <div className="relative">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
                 <Input
@@ -2439,11 +2448,13 @@ export default function LipstickCatalogApp() {
                 />
               </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-col gap-4">
                 <div className="flex flex-wrap gap-2">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "all" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                    className={`rounded-full px-5 ${quickTab === "all"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("all")}
                   >
@@ -2452,7 +2463,9 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "owned" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                    className={`rounded-full px-5 ${quickTab === "owned"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("owned")}
                   >
@@ -2461,7 +2474,9 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant={quickTab === "shared" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "shared" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                    className={`rounded-full px-5 ${quickTab === "shared"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("shared")}
                   >
@@ -2470,7 +2485,9 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant={quickTab === "trash" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "trash" ? "bg-zinc-950 text-white" : "border-rose-100 bg-white/90"
+                    className={`rounded-full px-5 ${quickTab === "trash"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("trash")}
                   >
@@ -2478,7 +2495,7 @@ export default function LipstickCatalogApp() {
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                   <Button
                     variant="outline"
                     className="rounded-2xl border-rose-100 bg-white/90"
@@ -2518,15 +2535,6 @@ export default function LipstickCatalogApp() {
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Export
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-rose-100 bg-white/90"
-                    onClick={() => void handleSignOut()}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
                   </Button>
                 </div>
               </div>
