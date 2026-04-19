@@ -96,7 +96,7 @@ type LipstickFormValues = {
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
-const REMEMBER_ME_TIMEOUT_MS = 24 * 60 * 60 * 1000; // 1 day
+const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 1 day
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = "lipstick_remember_me";
 const LAST_EMAIL_KEY = "lipstick_last_email";
@@ -2408,7 +2408,10 @@ export default function LipstickCatalogApp() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <Button className="rounded-2xl bg-zinc-950 px-5 text-white hover:bg-zinc-800" onClick={startAddLipstick}>
+                  <Button
+                    className="rounded-2xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
+                    onClick={startAddLipstick}
+                  >
                     <Plus className="mr-2 h-4 w-4" />
                     Add lipstick
                   </Button>
@@ -2426,17 +2429,17 @@ export default function LipstickCatalogApp() {
                     )}
                     {isScanning ? "Scanning..." : "Scan"}
                   </Button>
+
+                  <Button
+                    variant="ghost"
+                    className="rounded-2xl text-zinc-500 hover:bg-rose-50"
+                    onClick={() => void handleSignOut()}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </Button>
                 </div>
               </div>
-
-              <Button
-                variant="ghost"
-                className="rounded-2xl text-zinc-500 hover:bg-rose-50"
-                onClick={() => void handleSignOut()}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign out
-              </Button>
 
               <div className="relative">
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
@@ -2449,7 +2452,7 @@ export default function LipstickCatalogApp() {
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "all"
@@ -2495,7 +2498,7 @@ export default function LipstickCatalogApp() {
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant="outline"
                     className="rounded-2xl border-rose-100 bg-white/90"
@@ -2551,16 +2554,6 @@ export default function LipstickCatalogApp() {
                 <p className="mt-2 text-sm text-zinc-500">In your collection</p>
               </div>
 
-              <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-amber-50/65 p-4 shadow-sm">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                  Shared
-                </p>
-                <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
-                  {totalShared}
-                </p>
-                <p className="mt-2 text-sm text-zinc-500">Shared with you</p>
-              </div>
-
               <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
                   Favorites
@@ -2572,15 +2565,6 @@ export default function LipstickCatalogApp() {
                 <p className="mt-2 text-sm text-zinc-500">{favoritesPercent}% of active library</p>
               </div>
 
-              <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-fuchsia-50/65 p-4 shadow-sm">
-                <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                  Total Active
-                </p>
-                <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
-                  {totalActive}
-                </p>
-                <p className="mt-2 text-sm text-zinc-500">{totalWishlist} on wishlist</p>
-              </div>
             </div>
           </div>
 
