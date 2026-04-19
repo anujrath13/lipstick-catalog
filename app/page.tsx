@@ -2411,8 +2411,8 @@ export default function LipstickCatalogApp() {
         >
           <div className="h-1.5 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300" />
 
-          <div className="grid gap-6 p-5 md:p-7 xl:grid-cols-[1.35fr_0.95fr] xl:items-start">
-            <div className="space-y-5">
+          <div className="flex justify-between gap-6 p-5 md:p-7">
+            <div className="space-y-5 flex-1 max-w-3xl">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-rose-500">
