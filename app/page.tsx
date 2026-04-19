@@ -288,7 +288,7 @@ export default function LipstickCatalogApp() {
       setForm({
         ...emptyForm,
         brand: typeof scanned.brand === "string" ? scanned.brand : "",
-        shade: typeof scanned.shade === "string" ? scanned.shade : "",
+        shade: extractShadeName(scanned.shade),
         type: typeof scanned.type === "string" ? scanned.type : "",
         finish: typeof scanned.finish === "string" ? scanned.finish : "",
         undertone: typeof scanned.undertone === "string" ? scanned.undertone : "",
@@ -301,9 +301,11 @@ export default function LipstickCatalogApp() {
         purchaseDate: "",
         occasion: typeof scanned.occasion === "string" ? scanned.occasion : "",
         notes:
-          typeof scanned.notes === "string"
+          typeof scanned.notes === "string" && scanned.notes.trim()
             ? scanned.notes
-            : `Barcode: ${barcode}`,
+            : typeof scanned.shade === "string" && scanned.shade.trim()
+              ? `Full scanned title: ${scanned.shade}`
+              : `Barcode: ${barcode}`,
         barcode:
           typeof scanned.barcode === "string"
             ? scanned.barcode
@@ -345,6 +347,32 @@ export default function LipstickCatalogApp() {
 
   const normalizeScannedValue = (value: unknown) =>
     typeof value === "string" ? value.trim() : "";
+
+  const extractShadeName = (value: unknown) => {
+    if (typeof value !== "string") return "";
+
+    const cleaned = value.trim();
+    if (!cleaned) return "";
+
+    const parts = cleaned
+      .split(" - ")
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    if (parts.length >= 2) {
+      const withoutSize = parts.filter(
+        (part) => !/^\d+(\.\d+)?\s?(oz|g|ml)$/i.test(part)
+      );
+
+      if (withoutSize.length >= 2) {
+        return withoutSize[withoutSize.length - 1];
+      }
+
+      return parts[parts.length - 1];
+    }
+
+    return cleaned;
+  };
 
   const compressImage = (file: File): Promise<File> =>
     new Promise((resolve, reject) => {
@@ -492,7 +520,7 @@ export default function LipstickCatalogApp() {
       setForm({
         ...emptyForm,
         brand: normalizeScannedValue(scanned.brand),
-        shade: normalizeScannedValue(scanned.shade),
+        shade: extractShadeName(scanned.shade),
         type: normalizeScannedValue(scanned.type),
         finish: normalizeScannedValue(scanned.finish),
         undertone: normalizeScannedValue(scanned.undertone),
@@ -500,7 +528,11 @@ export default function LipstickCatalogApp() {
         priceTier: normalizeScannedValue(scanned.priceTier),
         status: normalizeScannedValue(scanned.status) || "Owned",
         occasion: normalizeScannedValue(scanned.occasion),
-        notes: normalizeScannedValue(scanned.notes),
+        notes:
+          normalizeScannedValue(scanned.notes) ||
+          (typeof scanned.shade === "string" && scanned.shade.trim()
+            ? `Full scanned title: ${scanned.shade}`
+            : ""),
         barcode: normalizeScannedValue(scanned.barcode),
         image_url_1: "",
         image_url_2: "",
