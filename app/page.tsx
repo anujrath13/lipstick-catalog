@@ -723,7 +723,25 @@ export default function LipstickCatalogApp() {
   };
 
   const startAddLipstick = () => {
-    resetForm();
+    setForm({
+      brand: "",
+      shade: "",
+      type: "",
+      finish: "",
+      undertone: "",
+      colorFamily: "",
+      priceTier: "",
+      status: "",
+      purchaseDate: "",
+      occasion: "",
+      notes: "",
+      barcode: "",
+      image_url_1: "",
+      image_url_2: "",
+    });
+    setEditingLipstickId(null);
+    setImageFile1(null);
+    setImageFile2(null);
     setIsAddFormOpen(true);
   };
 
