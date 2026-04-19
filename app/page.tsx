@@ -2102,11 +2102,13 @@ export default function LipstickCatalogApp() {
                         value={form.shade}
                         onChange={(e) => updateForm("shade", e.target.value)}
                         placeholder="e.g. Velvet Teddy"
-                        className="rounded-2xl border-rose-100"
+                        className="rounded-2xl border-rose-100 text-lg font-medium"
                       />
                     </div>
                   </div>
-                  <p className="mb-4 text-sm font-medium text-slate-700">Formula & color</p>
+                  <p className="mt-4 mb-4 text-sm font-medium text-slate-700">
+                    Formula & color
+                  </p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Type</Label>
