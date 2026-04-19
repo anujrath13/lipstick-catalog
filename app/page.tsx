@@ -2490,8 +2490,8 @@ export default function LipstickCatalogApp() {
         >
           <div className="h-1.5 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300" />
 
-          <div className="flex justify-between gap-6 p-5 md:p-7">
-            <div className="space-y-5 flex-1 max-w-3xl">
+          <div className="flex flex-col gap-6 p-4 sm:p-5 md:p-7 md:flex-row md:justify-between">
+            <div className="space-y-4 sm:space-y-5 flex-1 max-w-3xl">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
                   <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-rose-500">
@@ -2500,7 +2500,7 @@ export default function LipstickCatalogApp() {
                   </div>
 
                   <div>
-                    <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900">
                       My Lipstick Library
                     </h1>
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 md:text-base">
@@ -2514,7 +2514,7 @@ export default function LipstickCatalogApp() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                   <Button
                     className="rounded-2xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
                     onClick={startAddLipstick}
@@ -2546,12 +2546,12 @@ export default function LipstickCatalogApp() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search by shade, brand, finish, notes..."
-                  className="h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm placeholder:text-zinc-400"
+                  className="w-full h-12 sm:h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm"
                 />
               </div>
 
               <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "all"
@@ -2694,7 +2694,7 @@ export default function LipstickCatalogApp() {
 
               {/* Stats cards */}
               <div className="flex-shrink-0 pt-6">
-                <div className="flex gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4">
                   <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
                       Owned
@@ -3141,7 +3141,7 @@ export default function LipstickCatalogApp() {
                                 </div>
                               ) : null}
 
-                              <div className="flex flex-wrap gap-2">
+                              <div className="flex gap-2 overflow-x-auto pb-1">
                                 <Badge className="rounded-full">
                                   {item.status || "No status"}
                                 </Badge>
