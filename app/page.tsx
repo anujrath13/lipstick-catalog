@@ -2137,7 +2137,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select type" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Bullet">Bullet</SelectItem>
                           <SelectItem value="Liquid">Liquid</SelectItem>
                           <SelectItem value="Tint">Tint</SelectItem>
@@ -2172,7 +2172,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select finish" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Matte">Matte</SelectItem>
                           <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
                           <SelectItem value="Soft Matte">Soft Matte</SelectItem>
@@ -2193,7 +2193,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select undertone" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Warm">Warm</SelectItem>
                           <SelectItem value="Cool">Cool</SelectItem>
                           <SelectItem value="Neutral">Neutral</SelectItem>
@@ -2210,7 +2210,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select color family" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Red">Red</SelectItem>
                           <SelectItem value="Pink">Pink</SelectItem>
                           <SelectItem value="Berry">Berry</SelectItem>
