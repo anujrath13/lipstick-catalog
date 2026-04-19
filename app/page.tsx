@@ -98,7 +98,7 @@ type LipstickFormValues = {
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
-const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 1 day
+const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 30 day
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = "lipstick_remember_me";
 const LAST_EMAIL_KEY = "lipstick_last_email";
@@ -598,7 +598,7 @@ export default function LipstickCatalogApp() {
 
         setAuthMessage(
           rememberMeEnabled
-            ? "You were logged out after 1 day of inactivity."
+            ? "You were logged out after 30 day of inactivity."
             : "You were logged out after 20 minutes of inactivity."
         );
         return;
@@ -1798,7 +1798,7 @@ export default function LipstickCatalogApp() {
                   {authMode === "signin" ? (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-600">
-                        {rememberMe ? "Remembered ✓" : "Remember me for 1 day"}
+                        {rememberMe ? "Remembered ✓" : "Remember me for 30 day"}
                       </span>
 
                       <button
