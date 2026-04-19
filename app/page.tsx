@@ -610,14 +610,41 @@ export default function LipstickCatalogApp() {
     };
 
     const checkInactivity = async () => {
-      const lastActivityRaw = localStorage.getItem(LAST_ACTIVITY_KEY);
       const rememberMeEnabled = localStorage.getItem(REMEMBER_ME_KEY) === "true";
       const timeoutMs = rememberMeEnabled
         ? REMEMBER_ME_TIMEOUT_MS
         : INACTIVITY_TIMEOUT_MS;
 
-      const lastActivity = lastActivityRaw ? Number(lastActivityRaw) : Date.now();
+      const lastActivityRaw = localStorage.getItem(LAST_ACTIVITY_KEY);
+
+      if (!lastActivityRaw) {
+        const now = Date.now();
+        localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
+
+        if (inactivityTimeoutRef.current) {
+          clearTimeout(inactivityTimeoutRef.current);
+        }
+
+        inactivityTimeoutRef.current = setTimeout(async () => {
+          await supabase.auth.signOut();
+          localStorage.removeItem(LAST_ACTIVITY_KEY);
+          setAuthMessage(
+            rememberMeEnabled
+              ? "You were logged out after 30 days of inactivity."
+              : "You were logged out after 20 minutes of inactivity."
+          );
+        }, timeoutMs);
+
+        return;
+      }
+
+      const lastActivity = Number(lastActivityRaw);
       const now = Date.now();
+
+      if (Number.isNaN(lastActivity)) {
+        localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
+        return;
+      }
 
       if (now - lastActivity >= timeoutMs) {
         if (inactivityTimeoutRef.current) {
@@ -630,7 +657,7 @@ export default function LipstickCatalogApp() {
 
         setAuthMessage(
           rememberMeEnabled
-            ? "You were logged out after 30 day of inactivity."
+            ? "You were logged out after 30 days of inactivity."
             : "You were logged out after 20 minutes of inactivity."
         );
         return;
@@ -645,7 +672,11 @@ export default function LipstickCatalogApp() {
       inactivityTimeoutRef.current = setTimeout(async () => {
         await supabase.auth.signOut();
         localStorage.removeItem(LAST_ACTIVITY_KEY);
-        setAuthMessage("You were logged out after 20 minutes of inactivity.");
+        setAuthMessage(
+          rememberMeEnabled
+            ? "You were logged out after 30 days of inactivity."
+            : "You were logged out after 20 minutes of inactivity."
+        );
       }, remainingTime);
     };
 
@@ -1030,12 +1061,16 @@ export default function LipstickCatalogApp() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+    localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password,
     });
 
     if (error) {
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
       setAuthMessage(error.message);
       return;
     }
