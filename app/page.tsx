@@ -293,6 +293,7 @@ export default function LipstickCatalogApp() {
         finish: typeof scanned.finish === "string" ? scanned.finish : "",
         undertone: typeof scanned.undertone === "string" ? scanned.undertone : "",
         colorFamily: typeof scanned.colorFamily === "string" ? scanned.colorFamily : "",
+        priceTier: typeof scanned.priceTier === "string" ? scanned.priceTier : "",
         status:
           typeof scanned.status === "string" && scanned.status.trim()
             ? scanned.status
@@ -496,6 +497,7 @@ export default function LipstickCatalogApp() {
         finish: normalizeScannedValue(scanned.finish),
         undertone: normalizeScannedValue(scanned.undertone),
         colorFamily: normalizeScannedValue(scanned.colorFamily),
+        priceTier: normalizeScannedValue(scanned.priceTier),
         status: normalizeScannedValue(scanned.status) || "Owned",
         occasion: normalizeScannedValue(scanned.occasion),
         notes: normalizeScannedValue(scanned.notes),
@@ -708,6 +710,7 @@ export default function LipstickCatalogApp() {
     setFinishFilter("all");
     setUndertoneFilter("all");
     setColorFamilyFilter("all");
+    setPriceTierFilter("all");
     setStatusFilter("all");
     setOwnershipFilter("all");
     setFavoritesFilter("all");
@@ -737,6 +740,7 @@ export default function LipstickCatalogApp() {
       finish: item.finish,
       undertone: item.undertone,
       colorFamily: item.colorFamily,
+      priceTier: item.priceTier,
       status: item.status,
       purchaseDate: item.purchaseDate,
       occasion: item.occasion,
@@ -772,6 +776,7 @@ export default function LipstickCatalogApp() {
       "Finish",
       "Undertone",
       "Color Family",
+      "Price Tier",
       "Status",
       "Purchase Date",
       "Occasion",
@@ -804,6 +809,7 @@ export default function LipstickCatalogApp() {
         item.finish,
         item.undertone,
         item.colorFamily,
+        item.priceTier,
         item.status,
         item.purchaseDate,
         item.occasion,
@@ -878,6 +884,7 @@ export default function LipstickCatalogApp() {
       finish: item.finish,
       undertone: item.undertone,
       colorFamily: item.color_family,
+      priceTier: item.price_tier ?? "",
       status: item.status,
       purchaseDate: item.purchase_date ?? "",
       occasion: item.occasion,
@@ -1044,6 +1051,7 @@ export default function LipstickCatalogApp() {
         finish: form.finish,
         undertone: form.undertone,
         color_family: form.colorFamily,
+        price_tier: form.priceTier,
         status: form.status,
         purchase_date: form.purchaseDate || todayString(),
         occasion: form.occasion,
@@ -1425,7 +1433,7 @@ export default function LipstickCatalogApp() {
   const visibleItems = useMemo(() => {
     const filtered = items.filter((item) => {
       const text =
-        `${item.brand} ${item.shade} ${item.type} ${item.finish} ${item.undertone} ${item.colorFamily} ${item.status} ${item.occasion} ${item.notes}`.toLowerCase();
+        `${item.brand} ${item.shade} ${item.type} ${item.finish} ${item.undertone} ${item.colorFamily} ${item.priceTier} ${item.status} ${item.occasion} ${item.notes}`.toLowerCase();
 
       const matchesQuery = text.includes(query.toLowerCase());
       const matchesType = typeFilter === "all" || item.type === typeFilter;
@@ -3088,6 +3096,12 @@ export default function LipstickCatalogApp() {
                                 {item.colorFamily ? (
                                   <Badge variant="secondary" className="rounded-full">
                                     {item.colorFamily}
+                                  </Badge>
+                                ) : null}
+
+                                {item.priceTier ? (
+                                  <Badge variant="secondary" className="rounded-full">
+                                    {item.priceTier}
                                   </Badge>
                                 ) : null}
 
