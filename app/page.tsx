@@ -2525,7 +2525,7 @@ export default function LipstickCatalogApp() {
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                <div className="flex flex-row gap-2 flex-wrap">
                   <Button
                     className="rounded-2xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
                     onClick={startAddLipstick}
