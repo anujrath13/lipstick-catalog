@@ -66,6 +66,7 @@ type LipstickItem = {
   barcode: string;
   image_url_1: string | null;
   image_url_2: string | null;
+  priceTier: string;
 };
 
 type ProfileRow = {
@@ -93,6 +94,7 @@ type LipstickFormValues = {
   barcode: string;
   image_url_1: string;
   image_url_2: string;
+  priceTier: string;
 };
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
@@ -117,6 +119,7 @@ const emptyForm: LipstickFormValues = {
   barcode: "",
   image_url_1: "",
   image_url_2: "",
+  priceTier: "",
 };
 
 const colorFamilyMap: Record<
@@ -188,6 +191,7 @@ export default function LipstickCatalogApp() {
 
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [priceTierFilter, setPriceTierFilter] = useState("all");
   const [finishFilter, setFinishFilter] = useState("all");
   const [undertoneFilter, setUndertoneFilter] = useState("all");
   const [colorFamilyFilter, setColorFamilyFilter] = useState("all");
@@ -1431,6 +1435,8 @@ export default function LipstickCatalogApp() {
       const matchesColorFamily =
         colorFamilyFilter === "all" || item.colorFamily === colorFamilyFilter;
       const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+      const matchesPriceTier =
+        priceTierFilter === "all" || item.priceTier === priceTierFilter;
 
       const isOwnedByYou = session?.user?.id === item.ownerUserId;
       const isSharedWithYou = session?.user?.id !== item.ownerUserId;
@@ -1461,6 +1467,7 @@ export default function LipstickCatalogApp() {
         matchesUndertone &&
         matchesColorFamily &&
         matchesStatus &&
+        matchesPriceTier &&
         matchesOwnership &&
         matchesQuickTab &&
         matchesFavorite
@@ -2115,6 +2122,22 @@ export default function LipstickCatalogApp() {
                     </div>
 
                     <div className="space-y-2">
+                      <Label>Price tier</Label>
+                      <Select
+                        value={form.priceTier || undefined}
+                        onValueChange={(v) => updateForm("priceTier", v)}
+                      >
+                        <SelectTrigger className="rounded-2xl border-rose-100">
+                          <SelectValue placeholder="Select price tier" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Drugstore">Drugstore</SelectItem>
+                          <SelectItem value="High-End">High-End</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
                       <Label>Finish</Label>
                       <Select
                         value={form.finish || undefined}
@@ -2577,163 +2600,175 @@ export default function LipstickCatalogApp() {
               </div>
 
               {/* Stats cards */}
-              <div className="flex gap-4">
-                <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                    Owned
-                  </p>
-                  <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
-                    {totalOwned}
-                  </p>
-                  <p className="mt-2 text-sm text-zinc-500">
-                    In your collection
-                  </p>
-                </div>
+              <div className="flex-shrink-0 pt-6">
+                <div className="flex gap-4">
+                  <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                      Owned
+                    </p>
+                    <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+                      {totalOwned}
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-500">
+                      In your collection
+                    </p>
+                  </div>
 
-                <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
-                  <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                    Favorites
-                  </p>
-                  <p className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                    <Heart className="h-5 w-5 fill-current text-rose-500" />
-                    {totalFavorites}
-                  </p>
-                  <p className="mt-2 text-sm text-zinc-500">
-                    {favoritesPercent}% of active library
-                  </p>
+                  <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
+                    <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                      Favorites
+                    </p>
+                    <p className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
+                      <Heart className="h-5 w-5 fill-current text-rose-500" />
+                      {totalFavorites}
+                    </p>
+                    <p className="mt-2 text-sm text-zinc-500">
+                      {favoritesPercent}% of active library
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <AnimatePresence initial={false}>
-            {isFiltersOpen ? (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden border-t border-rose-100/70 bg-rose-50/35 px-5 py-4 md:px-7"
-              >
-                <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-2">
-                    <Funnel className="h-4 w-4 text-zinc-500" />
-                    <p className="text-sm font-medium text-zinc-700">Refine your library</p>
+            <AnimatePresence initial={false}>
+              {isFiltersOpen ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden border-t border-rose-100/70 bg-rose-50/35 px-5 py-4 md:px-7"
+                >
+                  <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                    <div className="flex items-center gap-2">
+                      <Funnel className="h-4 w-4 text-zinc-500" />
+                      <p className="text-sm font-medium text-zinc-700">Refine your library</p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <ArrowUpDown className="h-4 w-4 text-zinc-500" />
+                      <Select value={sortBy} onValueChange={setSortBy}>
+                        <SelectTrigger className="w-[180px] rounded-2xl border-rose-100 bg-white">
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="newest">Newest first</SelectItem>
+                          <SelectItem value="oldest">Oldest first</SelectItem>
+                          <SelectItem value="brand-az">Brand A-Z</SelectItem>
+                          <SelectItem value="brand-za">Brand Z-A</SelectItem>
+                          <SelectItem value="shade-az">Shade A-Z</SelectItem>
+                          <SelectItem value="favorites-first">Favorites first</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <ArrowUpDown className="h-4 w-4 text-zinc-500" />
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-[180px] rounded-2xl border-rose-100 bg-white">
-                        <SelectValue placeholder="Sort by" />
+                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                    <Select value={typeFilter} onValueChange={setTypeFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="newest">Newest first</SelectItem>
-                        <SelectItem value="oldest">Oldest first</SelectItem>
-                        <SelectItem value="brand-az">Brand A-Z</SelectItem>
-                        <SelectItem value="brand-za">Brand Z-A</SelectItem>
-                        <SelectItem value="shade-az">Shade A-Z</SelectItem>
-                        <SelectItem value="favorites-first">Favorites first</SelectItem>
+                        <SelectItem value="all">All types</SelectItem>
+                        <SelectItem value="Bullet">Bullet</SelectItem>
+                        <SelectItem value="Liquid">Liquid</SelectItem>
+                        <SelectItem value="Tint">Tint</SelectItem>
+                        <SelectItem value="Gloss">Gloss</SelectItem>
+                        <SelectItem value="Balm">Balm</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={priceTierFilter} onValueChange={setPriceTierFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Price tier" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All price tiers</SelectItem>
+                        <SelectItem value="Drugstore">Drugstore</SelectItem>
+                        <SelectItem value="High-End">High-End</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={finishFilter} onValueChange={setFinishFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Finish" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All finishes</SelectItem>
+                        <SelectItem value="Matte">Matte</SelectItem>
+                        <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
+                        <SelectItem value="Soft Matte">Soft Matte</SelectItem>
+                        <SelectItem value="Satin">Satin</SelectItem>
+                        <SelectItem value="Glossy">Glossy</SelectItem>
+                        <SelectItem value="Sheer">Sheer</SelectItem>
+                        <SelectItem value="Tint">Tint</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Undertone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All undertones</SelectItem>
+                        <SelectItem value="Warm">Warm</SelectItem>
+                        <SelectItem value="Cool">Cool</SelectItem>
+                        <SelectItem value="Neutral">Neutral</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Color family" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All color families</SelectItem>
+                        <SelectItem value="Red">Red</SelectItem>
+                        <SelectItem value="Pink">Pink</SelectItem>
+                        <SelectItem value="Berry">Berry</SelectItem>
+                        <SelectItem value="Brown">Brown</SelectItem>
+                        <SelectItem value="Nude">Nude</SelectItem>
+                        <SelectItem value="Coral">Coral</SelectItem>
+                        <SelectItem value="Mauve">Mauve</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="Owned">Owned</SelectItem>
+                        <SelectItem value="Wishlist">Wishlist</SelectItem>
+                        <SelectItem value="Decluttered">Decluttered</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Ownership" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All lipsticks</SelectItem>
+                        <SelectItem value="owned">Owned by you</SelectItem>
+                        <SelectItem value="shared">Shared with you</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={favoritesFilter} onValueChange={setFavoritesFilter}>
+                      <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+                        <SelectValue placeholder="Favorites" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All favorites</SelectItem>
+                        <SelectItem value="favorites">Favorites only</SelectItem>
+                        <SelectItem value="nonfavorites">Non-favorites</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      <SelectItem value="Bullet">Bullet</SelectItem>
-                      <SelectItem value="Liquid">Liquid</SelectItem>
-                      <SelectItem value="Tint">Tint</SelectItem>
-                      <SelectItem value="Gloss">Gloss</SelectItem>
-                      <SelectItem value="Balm">Balm</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={finishFilter} onValueChange={setFinishFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Finish" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All finishes</SelectItem>
-                      <SelectItem value="Matte">Matte</SelectItem>
-                      <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                      <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                      <SelectItem value="Satin">Satin</SelectItem>
-                      <SelectItem value="Glossy">Glossy</SelectItem>
-                      <SelectItem value="Sheer">Sheer</SelectItem>
-                      <SelectItem value="Tint">Tint</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Undertone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All undertones</SelectItem>
-                      <SelectItem value="Warm">Warm</SelectItem>
-                      <SelectItem value="Cool">Cool</SelectItem>
-                      <SelectItem value="Neutral">Neutral</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Color family" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All color families</SelectItem>
-                      <SelectItem value="Red">Red</SelectItem>
-                      <SelectItem value="Pink">Pink</SelectItem>
-                      <SelectItem value="Berry">Berry</SelectItem>
-                      <SelectItem value="Brown">Brown</SelectItem>
-                      <SelectItem value="Nude">Nude</SelectItem>
-                      <SelectItem value="Coral">Coral</SelectItem>
-                      <SelectItem value="Mauve">Mauve</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="Owned">Owned</SelectItem>
-                      <SelectItem value="Wishlist">Wishlist</SelectItem>
-                      <SelectItem value="Decluttered">Decluttered</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Ownership" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All lipsticks</SelectItem>
-                      <SelectItem value="owned">Owned by you</SelectItem>
-                      <SelectItem value="shared">Shared with you</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={favoritesFilter} onValueChange={setFavoritesFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Favorites" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All favorites</SelectItem>
-                      <SelectItem value="favorites">Favorites only</SelectItem>
-                      <SelectItem value="nonfavorites">Non-favorites</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
         </motion.section>
 
         <div className="space-y-4">
