@@ -2150,8 +2150,7 @@ export default function LipstickCatalogApp() {
                     <div className="space-y-2">
                       <Label>Price tier</Label>
                       <Select
-                        key={`price-tier-${editingLipstickId ?? "new"}-${form.priceTier || "empty"}`}
-                        value={form.priceTier}
+                        value={form.priceTier || undefined}
                         onValueChange={(v) => updateForm("priceTier", v)}
                       >
                         <SelectTrigger className="rounded-2xl border-rose-100">
