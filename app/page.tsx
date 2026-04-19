@@ -2156,7 +2156,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select price tier" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Drugstore">Drugstore</SelectItem>
                           <SelectItem value="High-End">High-End</SelectItem>
                         </SelectContent>
