@@ -2084,6 +2084,28 @@ export default function LipstickCatalogApp() {
                 </div>
 
                 <div className="rounded-2xl border border-rose-100 p-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Brand</Label>
+                      <Input
+                        ref={brandInputRef}
+                        value={form.brand}
+                        onChange={(e) => updateForm("brand", e.target.value)}
+                        placeholder="e.g. MAC"
+                        className="rounded-2xl border-rose-100"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Shade</Label>
+                      <Input
+                        value={form.shade}
+                        onChange={(e) => updateForm("shade", e.target.value)}
+                        placeholder="e.g. Velvet Teddy"
+                        className="rounded-2xl border-rose-100"
+                      />
+                    </div>
+                  </div>
                   <p className="mb-4 text-sm font-medium text-slate-700">Formula & color</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
