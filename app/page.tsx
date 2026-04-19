@@ -2086,41 +2086,7 @@ export default function LipstickCatalogApp() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex justify-end">
-                        <Button
-                          variant="ghost"
-                          className="rounded-2xl text-zinc-500 hover:bg-rose-50"
-                          onClick={() => void handleSignOut()}
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          Sign out
-                        </Button>
-                      </div>
 
-                      <div className="flex gap-4">
-                        <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
-                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                            Owned
-                          </p>
-                          <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
-                            {totalOwned}
-                          </p>
-                          <p className="mt-2 text-sm text-zinc-500">In your collection</p>
-                        </div>
-
-                        <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
-                          <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
-                            Favorites
-                          </p>
-                          <p className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
-                            <Heart className="h-5 w-5 fill-current text-rose-500" />
-                            {totalFavorites}
-                          </p>
-                          <p className="mt-2 text-sm text-zinc-500">
-                            {favoritesPercent}% of active library
-                          </p>
-                        </div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -2237,7 +2203,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select status" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Owned">Owned</SelectItem>
                           <SelectItem value="Wishlist">Wishlist</SelectItem>
                           <SelectItem value="Decluttered">Decluttered</SelectItem>
@@ -2254,7 +2220,7 @@ export default function LipstickCatalogApp() {
                         <SelectTrigger className="rounded-2xl border-rose-100">
                           <SelectValue placeholder="Select best use" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="z-[90]">
                           <SelectItem value="Daily">Daily</SelectItem>
                           <SelectItem value="Office">Office</SelectItem>
                           <SelectItem value="Evening">Evening</SelectItem>
