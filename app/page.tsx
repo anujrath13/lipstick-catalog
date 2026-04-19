@@ -2071,8 +2071,7 @@ export default function LipstickCatalogApp() {
               </div>
 
               <div className="space-y-5">
-                <div className="rounded-2xl border border-rose-100 p-4">
-                  <p className="mb-4 text-sm font-medium text-slate-700">Basic details</p>
+                <div className="space-y-4">
                   <div className="space-y-3">
                     <div className="border-b border-rose-100/60 pb-2 flex justify-end">
 
