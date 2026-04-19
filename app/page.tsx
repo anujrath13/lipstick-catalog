@@ -2040,26 +2040,41 @@ export default function LipstickCatalogApp() {
               <div className="space-y-5">
                 <div className="rounded-2xl border border-rose-100 p-4">
                   <p className="mb-4 text-sm font-medium text-slate-700">Basic details</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Brand</Label>
-                      <Input
-                        ref={brandInputRef}
-                        value={form.brand}
-                        onChange={(e) => updateForm("brand", e.target.value)}
-                        placeholder="e.g. MAC"
-                        className="rounded-2xl border-rose-100"
-                      />
+                  <div className="space-y-3">
+                    <div className="flex justify-end">
+                      <Button
+                        variant="ghost"
+                        className="rounded-2xl text-zinc-500 hover:bg-rose-50"
+                        onClick={() => void handleSignOut()}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign out
+                      </Button>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label>Shade</Label>
-                      <Input
-                        value={form.shade}
-                        onChange={(e) => updateForm("shade", e.target.value)}
-                        placeholder="e.g. Velvet Teddy"
-                        className="rounded-2xl border-rose-100"
-                      />
+                    <div className="flex gap-4">
+                      <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                          Owned
+                        </p>
+                        <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+                          {totalOwned}
+                        </p>
+                        <p className="mt-2 text-sm text-zinc-500">In your collection</p>
+                      </div>
+
+                      <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
+                        <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
+                          Favorites
+                        </p>
+                        <p className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
+                          <Heart className="h-5 w-5 fill-current text-rose-500" />
+                          {totalFavorites}
+                        </p>
+                        <p className="mt-2 text-sm text-zinc-500">
+                          {favoritesPercent}% of active library
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2430,14 +2445,6 @@ export default function LipstickCatalogApp() {
                     {isScanning ? "Scanning..." : "Scan"}
                   </Button>
 
-                  <Button
-                    variant="ghost"
-                    className="rounded-2xl text-zinc-500 hover:bg-rose-50"
-                    onClick={() => void handleSignOut()}
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign out
-                  </Button>
                 </div>
               </div>
 
@@ -2456,8 +2463,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "all"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/90"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("all")}
                   >
@@ -2467,8 +2474,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "owned"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/90"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("owned")}
                   >
@@ -2478,8 +2485,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "shared" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "shared"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/90"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("shared")}
                   >
@@ -2489,8 +2496,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "trash" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "trash"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/90"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/90"
                       }`}
                     onClick={() => setQuickTab("trash")}
                   >
