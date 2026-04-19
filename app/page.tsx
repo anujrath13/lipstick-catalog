@@ -2494,9 +2494,20 @@ export default function LipstickCatalogApp() {
             <div className="space-y-4 sm:space-y-5 flex-1 max-w-3xl">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-rose-500">
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Your curated collection
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-rose-500">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Your curated collection
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      className="rounded-2xl text-sm text-zinc-500 hover:bg-rose-50"
+                      onClick={() => void handleSignOut()}
+                    >
+                      <LogOut className="mr-1 h-4 w-4" />
+                      Sign out
+                    </Button>
                   </div>
 
                   <div>
@@ -2682,14 +2693,7 @@ export default function LipstickCatalogApp() {
             <div className="space-y-3">
               {/* Sign out row */}
               <div className="flex justify-end">
-                <Button
-                  variant="ghost"
-                  className="rounded-2xl text-zinc-500 hover:bg-rose-50"
-                  onClick={() => void handleSignOut()}
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </Button>
+
               </div>
 
               {/* Stats cards */}
