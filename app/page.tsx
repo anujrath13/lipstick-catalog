@@ -1560,6 +1560,21 @@ export default function LipstickCatalogApp() {
     session,
   ]);
 
+  const activeFilterChips = [
+    typeFilter !== "all" ? { key: "type", label: typeFilter } : null,
+    finishFilter !== "all" ? { key: "finish", label: finishFilter } : null,
+    undertoneFilter !== "all" ? { key: "undertone", label: undertoneFilter } : null,
+    colorFamilyFilter !== "all" ? { key: "colorFamily", label: colorFamilyFilter } : null,
+    priceTierFilter !== "all" ? { key: "priceTier", label: priceTierFilter } : null,
+    statusFilter !== "all" ? { key: "status", label: statusFilter } : null,
+    ownershipFilter !== "all"
+      ? { key: "ownership", label: ownershipFilter }
+      : null,
+    favoritesFilter !== "all"
+      ? { key: "favorites", label: favoritesFilter }
+      : null,
+  ].filter(Boolean) as { key: string; label: string }[];
+
   const compareItems = items.filter((item) => compareIds.includes(item.id));
   const compareItem1 = compareItems[0] ?? null;
   const compareItem2 = compareItems[1] ?? null;
@@ -2540,8 +2555,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "all"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/80 text-zinc-700"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("all")}
                   >
@@ -2551,8 +2566,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "owned"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/80 text-zinc-700"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("owned")}
                   >
@@ -2562,8 +2577,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "shared" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "shared"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/80 text-zinc-700"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("shared")}
                   >
@@ -2573,8 +2588,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "trash" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "trash"
-                        ? "bg-zinc-950 text-white"
-                        : "border-rose-100 bg-white/80 text-zinc-700"
+                      ? "bg-zinc-950 text-white"
+                      : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("trash")}
                   >
@@ -2586,8 +2601,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant="outline"
                     className={`rounded-2xl px-4 ${isFiltersOpen
-                        ? "border-rose-300 bg-rose-50 text-rose-700"
-                        : "border-rose-100 bg-white/90 text-zinc-700"
+                      ? "border-rose-300 bg-rose-50 text-rose-700"
+                      : "border-rose-100 bg-white/90 text-zinc-700"
                       }`}
                     onClick={() => setIsFiltersOpen((prev) => !prev)}
                   >
@@ -2629,6 +2644,38 @@ export default function LipstickCatalogApp() {
                     </Button>
                   </div>
                 </div>
+                {activeFilterChips.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {activeFilterChips.map((chip) => (
+                      <button
+                        key={chip.key}
+                        type="button"
+                        onClick={() => {
+                          if (chip.key === "type") setTypeFilter("all");
+                          if (chip.key === "finish") setFinishFilter("all");
+                          if (chip.key === "undertone") setUndertoneFilter("all");
+                          if (chip.key === "colorFamily") setColorFamilyFilter("all");
+                          if (chip.key === "priceTier") setPriceTierFilter("all");
+                          if (chip.key === "status") setStatusFilter("all");
+                          if (chip.key === "ownership") setOwnershipFilter("all");
+                          if (chip.key === "favorites") setFavoritesFilter("all");
+                        }}
+                        className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 hover:bg-rose-100"
+                      >
+                        {chip.label}
+                        <X className="h-3 w-3" />
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() => clearFilters()}
+                      className="text-sm text-zinc-500 hover:text-zinc-700"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
