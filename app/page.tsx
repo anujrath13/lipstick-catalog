@@ -1519,6 +1519,7 @@ export default function LipstickCatalogApp() {
     finishFilter,
     undertoneFilter,
     colorFamilyFilter,
+    priceTierFilter,
     statusFilter,
     ownershipFilter,
     quickTab,
