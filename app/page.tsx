@@ -2535,13 +2535,13 @@ export default function LipstickCatalogApp() {
                 />
               </div>
 
-              <div className="flex flex-col gap-4">
+              <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "all"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/90"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("all")}
                   >
@@ -2551,8 +2551,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "owned"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/90"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("owned")}
                   >
@@ -2562,8 +2562,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "shared" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "shared"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/90"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("shared")}
                   >
@@ -2573,8 +2573,8 @@ export default function LipstickCatalogApp() {
                   <Button
                     variant={quickTab === "trash" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "trash"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/90"
+                        ? "bg-zinc-950 text-white"
+                        : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
                     onClick={() => setQuickTab("trash")}
                   >
@@ -2582,10 +2582,13 @@ export default function LipstickCatalogApp() {
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100 bg-white/90"
+                    className={`rounded-2xl px-4 ${isFiltersOpen
+                        ? "border-rose-300 bg-rose-50 text-rose-700"
+                        : "border-rose-100 bg-white/90 text-zinc-700"
+                      }`}
                     onClick={() => setIsFiltersOpen((prev) => !prev)}
                   >
                     <Funnel className="mr-2 h-4 w-4" />
@@ -2597,32 +2600,34 @@ export default function LipstickCatalogApp() {
                     )}
                   </Button>
 
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-rose-100 bg-white/90"
-                    onClick={() => clearFilters()}
-                  >
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    Clear
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      className="rounded-2xl px-3 text-zinc-600 hover:bg-rose-50"
+                      onClick={() => clearFilters()}
+                    >
+                      <SlidersHorizontal className="mr-2 h-4 w-4" />
+                      Clear
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-rose-100 bg-white/90"
-                    onClick={() => void handleRefreshView()}
-                  >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Refresh
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      className="rounded-2xl px-3 text-zinc-600 hover:bg-rose-50"
+                      onClick={() => void handleRefreshView()}
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Refresh
+                    </Button>
 
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-rose-100 bg-white/90"
-                    onClick={exportVisibleItemsToCsv}
-                  >
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
-                  </Button>
+                    <Button
+                      variant="ghost"
+                      className="rounded-2xl px-3 text-zinc-600 hover:bg-rose-50"
+                      onClick={exportVisibleItemsToCsv}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Export
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
