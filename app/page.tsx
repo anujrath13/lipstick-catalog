@@ -2562,7 +2562,7 @@ export default function LipstickCatalogApp() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                <div className="flex items-center gap-4">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
                     className={`rounded-full px-5 ${quickTab === "all"
@@ -2627,14 +2627,7 @@ export default function LipstickCatalogApp() {
                   </Button>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      className="rounded-2xl px-3 text-zinc-600 hover:bg-rose-50"
-                      onClick={() => clearFilters()}
-                    >
-                      <SlidersHorizontal className="mr-2 h-4 w-4" />
-                      Clear
-                    </Button>
+
 
                     <Button
                       variant="ghost"
