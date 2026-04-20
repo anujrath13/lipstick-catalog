@@ -2597,10 +2597,10 @@ export default function LipstickCatalogApp() {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-4">
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                   <Button
                     variant={quickTab === "all" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "all"
+                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "all"
                       ? "bg-zinc-950 text-white"
                       : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
@@ -2611,7 +2611,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant={quickTab === "owned" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "owned"
+                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "owned"
                       ? "bg-zinc-950 text-white"
                       : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
@@ -2622,7 +2622,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant={quickTab === "shared" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "shared"
+                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "shared"
                       ? "bg-zinc-950 text-white"
                       : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
@@ -2633,7 +2633,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant={quickTab === "trash" ? "default" : "outline"}
-                    className={`rounded-full px-5 ${quickTab === "trash"
+                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "trash"
                       ? "bg-zinc-950 text-white"
                       : "border-rose-100 bg-white/80 text-zinc-700"
                       }`}
@@ -2643,10 +2643,10 @@ export default function LipstickCatalogApp() {
                   </Button>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
                   <Button
                     variant="outline"
-                    className={`rounded-2xl px-4 ${isFiltersOpen
+                    className={`shrink-0 rounded-xl h-9 px-3 text-sm ${isFiltersOpen
                       ? "border-rose-300 bg-rose-50 text-rose-700"
                       : "border-rose-100 bg-white/90 text-zinc-700"
                       }`}
@@ -2661,12 +2661,12 @@ export default function LipstickCatalogApp() {
                     )}
                   </Button>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
 
 
                     <Button
                       variant="ghost"
-                      className="rounded-2xl px-3 text-zinc-600 hover:bg-rose-50"
+                      className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
                       onClick={() => void handleRefreshView()}
                     >
                       <RotateCcw className="mr-2 h-4 w-4" />
@@ -2675,7 +2675,7 @@ export default function LipstickCatalogApp() {
 
                     <Button
                       variant="ghost"
-                      className="rounded-2xl px-3 text-zinc-600 hover:bg-rose-50"
+                      className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
                       onClick={exportVisibleItemsToCsv}
                     >
                       <Download className="mr-2 h-4 w-4" />
@@ -2958,28 +2958,28 @@ export default function LipstickCatalogApp() {
                   <Card
                     className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
                   >
-                    <CardContent className="p-4 md:p-5">
+                    <CardContent className="p-3 sm:p-4">
                       <div
-                        className="flex cursor-pointer flex-col gap-5 lg:flex-row lg:items-center lg:justify-between"
+                        className="flex cursor-pointer flex-col gap-3"
                         onClick={() => toggleExpanded(item.id)}
                       >
-                        <div className="min-w-0 space-y-4">
-                          <div className="flex flex-wrap items-center gap-2">
+                        <div className="min-w-0 space-y-3">
+                          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                             {item.colorFamily ? (
-                              <Badge className="rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
+                              <Badge className="shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
                                 {item.colorFamily}
                               </Badge>
                             ) : null}
 
                             <Badge
                               variant="outline"
-                              className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                              className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
                             >
                               {isOwnedByYou ? "Owned" : "Shared"}
                             </Badge>
 
                             {item.favorite ? (
-                              <Badge variant="outline" className="rounded-full border-rose-200 text-rose-600">
+                              <Badge variant="outline" className="shrink-0 rounded-full border-rose-200 text-rose-600">
                                 Favorite
                               </Badge>
                             ) : null}
@@ -2987,7 +2987,7 @@ export default function LipstickCatalogApp() {
                             {isDeleted ? (
                               <Badge
                                 variant="outline"
-                                className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
                               >
                                 In Trash
                               </Badge>
@@ -2995,23 +2995,23 @@ export default function LipstickCatalogApp() {
                           </div>
 
                           <div>
-                            <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 md:text-3xl">
+                            <h2 className="text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
                               {item.shade}
                             </h2>
-                            <p className="mt-1 text-base text-zinc-500">{item.brand}</p>
+                            <p className="mt-1 text-sm text-zinc-500">{item.brand}</p>
                           </div>
 
-                          <p className="max-w-2xl text-sm leading-6 text-zinc-500">
+                          <p className="text-sm leading-5 text-zinc-500">
                             {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-2 self-end lg:self-center">
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
                           <Button
                             variant="ghost"
                             size="icon"
                             disabled={isDeleted}
-                            className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
+                            className={`h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
                               }`}
                             onClick={(e) => {
                               e.stopPropagation();
@@ -3027,7 +3027,7 @@ export default function LipstickCatalogApp() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   startEditLipstick(item);
@@ -3040,7 +3040,7 @@ export default function LipstickCatalogApp() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setShareModalItem(item);
@@ -3053,7 +3053,7 @@ export default function LipstickCatalogApp() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   void deleteOwnedLipstick(item.id);
@@ -3180,7 +3180,7 @@ export default function LipstickCatalogApp() {
 
                                 <Badge
                                   variant="outline"
-                                  className={`rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                                  className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
                                 >
                                   {isOwnedByYou ? "In your collection" : "Shared with you"}
                                 </Badge>
@@ -3188,7 +3188,7 @@ export default function LipstickCatalogApp() {
                                 {isDeleted ? (
                                   <Badge
                                     variant="outline"
-                                    className="rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                    className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
                                   >
                                     In Trash
                                   </Badge>
@@ -3254,7 +3254,7 @@ export default function LipstickCatalogApp() {
                                 ) : null}
                               </div>
 
-                              <div className="flex flex-wrap items-center gap-3">
+                              <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
                                 {!isDeleted ? (
                                   <Button
                                     variant={compareIds.includes(item.id) ? "default" : "outline"}
