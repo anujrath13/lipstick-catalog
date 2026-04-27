@@ -206,6 +206,11 @@ export default function LipstickCatalogApp() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<number[]>([]);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  useEffect(() => {
+    if (compareIds.length === 2) {
+      setIsCompareOpen(true);
+    }
+  }, [compareIds]);
 
   const [isScanning, setIsScanning] = useState(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
