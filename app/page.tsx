@@ -2425,13 +2425,14 @@ export default function LipstickCatalogApp() {
 
         {isCompareOpen && compareItem1 && compareItem2 ? (
           <div
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/70 px-4"
+            className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center bg-black/70 px-4"
             onClick={() => setIsCompareOpen(false)}
           >
             <div
-              className="max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-[28px] bg-white p-4 md:p-6"
+              className="mt-auto max-h-[90vh] w-full max-w-5xl overflow-y-auto rounded-t-[28px] rounded-b-none sm:rounded-[28px] bg-white p-4 md:p-6"
               onClick={(e) => e.stopPropagation()}
             >
+              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-zinc-300 sm:hidden" />
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Compare Lipsticks</h2>
                 <Button
@@ -2443,7 +2444,7 @@ export default function LipstickCatalogApp() {
                 </Button>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid gap-4 lg:grid-cols-2">
                 <div className="rounded-3xl border border-rose-100 p-4">
                   <h3 className="text-xl font-semibold">{compareItem1.shade}</h3>
                   <p className="text-sm text-slate-600">{compareItem1.brand}</p>
@@ -3300,6 +3301,43 @@ export default function LipstickCatalogApp() {
           )}
         </div>
       </div>
+      {compareIds.length > 0 && (
+        <div className="fixed bottom-4 left-1/2 z-50 w-[92%] -translate-x-1/2 rounded-2xl border border-rose-100 bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
+
+          <div className="flex items-center justify-between gap-3">
+
+            {/* Left text */}
+            <div className="text-sm text-zinc-700">
+              {compareIds.length === 1
+                ? "1 of 2 selected • Select one more lipstick"
+                : "2 selected • Ready to compare"}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+
+              {/* Clear */}
+              <Button
+                variant="ghost"
+                className="h-8 px-2 text-sm text-zinc-500"
+                onClick={() => setCompareIds([])}
+              >
+                Clear
+              </Button>
+
+              {/* Compare */}
+              {compareIds.length === 2 && (
+                <Button
+                  className="h-8 rounded-xl bg-zinc-900 px-3 text-sm text-white"
+                  onClick={() => setIsCompareOpen(true)}
+                >
+                  Compare
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
