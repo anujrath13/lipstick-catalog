@@ -942,7 +942,12 @@ export default function LipstickCatalogApp() {
     );
 
     if (error) {
-      console.error("Error ensuring profile row:", error);
+      console.error("Error ensuring profile row:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      });
     }
   }
 
@@ -2601,6 +2606,7 @@ export default function LipstickCatalogApp() {
                   className="w-full h-12 sm:h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm"
                 />
               </div>
+
 
               <div className="space-y-4">
                 <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
