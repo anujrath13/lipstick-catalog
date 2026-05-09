@@ -206,6 +206,7 @@ export default function LipstickCatalogApp() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [compareIds, setCompareIds] = useState<number[]>([]);
   const [isCompareOpen, setIsCompareOpen] = useState(false);
+  const [mainTab, setMainTab] = useState<"collection" | "dashboard">("collection");
   useEffect(() => {
     if (compareIds.length === 2) {
       setIsCompareOpen(true);
@@ -2560,6 +2561,31 @@ export default function LipstickCatalogApp() {
                     <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900">
                       My Lipstick Library
                     </h1>
+
+                    <div className="mt-4 flex rounded-2xl border border-rose-100 bg-white/80 p-1 shadow-sm">
+                      <Button
+                        variant="ghost"
+                        className={`flex-1 rounded-xl text-sm ${mainTab === "collection"
+                          ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
+                          : "text-zinc-600 hover:bg-rose-50"
+                          }`}
+                        onClick={() => setMainTab("collection")}
+                      >
+                        Collection
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        className={`flex-1 rounded-xl text-sm ${mainTab === "dashboard"
+                          ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
+                          : "text-zinc-600 hover:bg-rose-50"
+                          }`}
+                        onClick={() => setMainTab("dashboard")}
+                      >
+                        Dashboard
+                      </Button>
+                    </div>
+
                     <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 md:text-base">
                       Organize your shades, surface favorites faster, and enjoy a more
                       editorial, premium view of your collection.
@@ -2597,137 +2623,141 @@ export default function LipstickCatalogApp() {
                 </div>
               </div>
 
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-                <Input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search by shade, brand, finish, notes..."
-                  className="w-full h-12 sm:h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm"
-                />
-              </div>
-
-
-              <div className="space-y-4">
-                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  <Button
-                    variant={quickTab === "all" ? "default" : "outline"}
-                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "all"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/80 text-zinc-700"
-                      }`}
-                    onClick={() => setQuickTab("all")}
-                  >
-                    All
-                  </Button>
-
-                  <Button
-                    variant={quickTab === "owned" ? "default" : "outline"}
-                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "owned"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/80 text-zinc-700"
-                      }`}
-                    onClick={() => setQuickTab("owned")}
-                  >
-                    Owned
-                  </Button>
-
-                  <Button
-                    variant={quickTab === "shared" ? "default" : "outline"}
-                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "shared"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/80 text-zinc-700"
-                      }`}
-                    onClick={() => setQuickTab("shared")}
-                  >
-                    Shared
-                  </Button>
-
-                  <Button
-                    variant={quickTab === "trash" ? "default" : "outline"}
-                    className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "trash"
-                      ? "bg-zinc-950 text-white"
-                      : "border-rose-100 bg-white/80 text-zinc-700"
-                      }`}
-                    onClick={() => setQuickTab("trash")}
-                  >
-                    Trash
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
-                  <Button
-                    variant="outline"
-                    className={`shrink-0 rounded-xl h-9 px-3 text-sm ${isFiltersOpen
-                      ? "border-rose-300 bg-rose-50 text-rose-700"
-                      : "border-rose-100 bg-white/90 text-zinc-700"
-                      }`}
-                    onClick={() => setIsFiltersOpen((prev) => !prev)}
-                  >
-                    <Funnel className="mr-2 h-4 w-4" />
-                    Filters
-                    {isFiltersOpen ? (
-                      <ChevronUp className="ml-2 h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    )}
-                  </Button>
-
-                  <div className="flex shrink-0 items-center gap-2">
-
-
-                    <Button
-                      variant="ghost"
-                      className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
-                      onClick={() => void handleRefreshView()}
-                    >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Refresh
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
-                      onClick={exportVisibleItemsToCsv}
-                    >
-                      <Download className="mr-2 h-4 w-4" />
-                      Export
-                    </Button>
+              {mainTab === "collection" && (
+                <>
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+                    <Input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search by shade, brand, finish, notes..."
+                      className="w-full h-12 sm:h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm"
+                    />
                   </div>
-                </div>
-                {activeFilterChips.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {activeFilterChips.map((chip) => (
-                      <button
-                        key={chip.key}
-                        type="button"
-                        onClick={() => {
-                          if (chip.key === "type") setTypeFilter("all");
-                          if (chip.key === "finish") setFinishFilter("all");
-                          if (chip.key === "undertone") setUndertoneFilter("all");
-                          if (chip.key === "colorFamily") setColorFamilyFilter("all");
-                          if (chip.key === "priceTier") setPriceTierFilter("all");
-                          if (chip.key === "status") setStatusFilter("all");
-                          if (chip.key === "ownership") setOwnershipFilter("all");
-                          if (chip.key === "favorites") setFavoritesFilter("all");
-                        }}
-                        className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 hover:bg-rose-100"
+
+
+                  <div className="space-y-4">
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                      <Button
+                        variant={quickTab === "all" ? "default" : "outline"}
+                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "all"
+                          ? "bg-zinc-950 text-white"
+                          : "border-rose-100 bg-white/80 text-zinc-700"
+                          }`}
+                        onClick={() => setQuickTab("all")}
                       >
-                        {chip.label}
-                        <X className="h-3 w-3" />
-                      </button>
-                    ))}
+                        All
+                      </Button>
 
-                    <button
-                      type="button"
-                      onClick={() => clearFilters()}
-                      className="text-sm text-zinc-500 hover:text-zinc-700"
-                    >
-                      Clear all
-                    </button>
+                      <Button
+                        variant={quickTab === "owned" ? "default" : "outline"}
+                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "owned"
+                          ? "bg-zinc-950 text-white"
+                          : "border-rose-100 bg-white/80 text-zinc-700"
+                          }`}
+                        onClick={() => setQuickTab("owned")}
+                      >
+                        Owned
+                      </Button>
+
+                      <Button
+                        variant={quickTab === "shared" ? "default" : "outline"}
+                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "shared"
+                          ? "bg-zinc-950 text-white"
+                          : "border-rose-100 bg-white/80 text-zinc-700"
+                          }`}
+                        onClick={() => setQuickTab("shared")}
+                      >
+                        Shared
+                      </Button>
+
+                      <Button
+                        variant={quickTab === "trash" ? "default" : "outline"}
+                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "trash"
+                          ? "bg-zinc-950 text-white"
+                          : "border-rose-100 bg-white/80 text-zinc-700"
+                          }`}
+                        onClick={() => setQuickTab("trash")}
+                      >
+                        Trash
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
+                      <Button
+                        variant="outline"
+                        className={`shrink-0 rounded-xl h-9 px-3 text-sm ${isFiltersOpen
+                          ? "border-rose-300 bg-rose-50 text-rose-700"
+                          : "border-rose-100 bg-white/90 text-zinc-700"
+                          }`}
+                        onClick={() => setIsFiltersOpen((prev) => !prev)}
+                      >
+                        <Funnel className="mr-2 h-4 w-4" />
+                        Filters
+                        {isFiltersOpen ? (
+                          <ChevronUp className="ml-2 h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        )}
+                      </Button>
+
+                      <div className="flex shrink-0 items-center gap-2">
+
+
+                        <Button
+                          variant="ghost"
+                          className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
+                          onClick={() => void handleRefreshView()}
+                        >
+                          <RotateCcw className="mr-2 h-4 w-4" />
+                          Refresh
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
+                          onClick={exportVisibleItemsToCsv}
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Export
+                        </Button>
+                      </div>
+                    </div>
+                    {activeFilterChips.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-2">
+                        {activeFilterChips.map((chip) => (
+                          <button
+                            key={chip.key}
+                            type="button"
+                            onClick={() => {
+                              if (chip.key === "type") setTypeFilter("all");
+                              if (chip.key === "finish") setFinishFilter("all");
+                              if (chip.key === "undertone") setUndertoneFilter("all");
+                              if (chip.key === "colorFamily") setColorFamilyFilter("all");
+                              if (chip.key === "priceTier") setPriceTierFilter("all");
+                              if (chip.key === "status") setStatusFilter("all");
+                              if (chip.key === "ownership") setOwnershipFilter("all");
+                              if (chip.key === "favorites") setFavoritesFilter("all");
+                            }}
+                            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 hover:bg-rose-100"
+                          >
+                            {chip.label}
+                            <X className="h-3 w-3" />
+                          </button>
+                        ))}
+
+                        <button
+                          type="button"
+                          onClick={() => clearFilters()}
+                          className="text-sm text-zinc-500 hover:text-zinc-700"
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
 
             <div className="space-y-3">
@@ -2910,403 +2940,422 @@ export default function LipstickCatalogApp() {
           </AnimatePresence>
         </motion.section>
 
-        <div className="space-y-4">
-          {loading ? (
-            <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
-              <CardContent className="p-5">Loading...</CardContent>
-            </Card>
-          ) : visibleItems.length === 0 ? (
-            <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
-              <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center">
-                <div className="rounded-full bg-rose-50 p-4">
-                  <Package2 className="h-10 w-10 text-rose-300" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-medium">No lipsticks match this view</h3>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Try changing your filters or add a new shade to your library.
-                  </p>
-                </div>
-                <div className="flex flex-wrap justify-center gap-2">
-                  <Button
-                    variant="outline"
-                    className="rounded-2xl border-rose-100"
-                    onClick={() => clearFilters()}
-                  >
-                    Clear Filters
-                  </Button>
-                  <Button className="rounded-2xl" onClick={startAddLipstick}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add a lipstick
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            visibleItems.map((item, index) => {
-              const isOwnedByYou = session.user.id === item.ownerUserId;
-              const isExpanded = expandedItems.includes(item.id);
-              const isDeleted = !!item.deletedAt;
-              const colorData = getColorData(item.colorFamily);
-              const deletedDaysAgo = item.deletedAt
-                ? Math.floor(
-                  (Date.now() - new Date(item.deletedAt).getTime()) /
-                  (1000 * 60 * 60 * 24)
-                )
-                : null;
-
-              const daysRemaining =
-                item.deletedAt && deletedDaysAgo !== null
-                  ? Math.max(0, 30 - deletedDaysAgo)
+        {mainTab === "collection" && (
+          <div className="space-y-4">
+            {loading ? (
+              <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+                <CardContent className="p-5">Loading...</CardContent>
+              </Card>
+            ) : visibleItems.length === 0 ? (
+              <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
+                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center">
+                  <div className="rounded-full bg-rose-50 p-4">
+                    <Package2 className="h-10 w-10 text-rose-300" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-medium">No lipsticks match this view</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Try changing your filters or add a new shade to your library.
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-2">
+                    <Button
+                      variant="outline"
+                      className="rounded-2xl border-rose-100"
+                      onClick={() => clearFilters()}
+                    >
+                      Clear Filters
+                    </Button>
+                    <Button className="rounded-2xl" onClick={startAddLipstick}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add a lipstick
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              visibleItems.map((item, index) => {
+                const isOwnedByYou = session.user.id === item.ownerUserId;
+                const isExpanded = expandedItems.includes(item.id);
+                const isDeleted = !!item.deletedAt;
+                const colorData = getColorData(item.colorFamily);
+                const deletedDaysAgo = item.deletedAt
+                  ? Math.floor(
+                    (Date.now() - new Date(item.deletedAt).getTime()) /
+                    (1000 * 60 * 60 * 24)
+                  )
                   : null;
 
-              return (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.25, delay: index * 0.03 }}
-                >
-                  <Card
-                    className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
+                const daysRemaining =
+                  item.deletedAt && deletedDaysAgo !== null
+                    ? Math.max(0, 30 - deletedDaysAgo)
+                    : null;
+
+                return (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: index * 0.03 }}
                   >
-                    <CardContent className="p-3 sm:p-4">
-                      <div
-                        className="flex cursor-pointer flex-col gap-3"
-                        onClick={() => toggleExpanded(item.id)}
-                      >
-                        <div className="min-w-0 space-y-3">
-                          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-                            {item.colorFamily ? (
-                              <Badge className="shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
-                                {item.colorFamily}
-                              </Badge>
-                            ) : null}
-
-                            <Badge
-                              variant="outline"
-                              className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
-                            >
-                              {isOwnedByYou ? "Owned" : "Shared"}
-                            </Badge>
-
-                            {item.favorite ? (
-                              <Badge variant="outline" className="shrink-0 rounded-full border-rose-200 text-rose-600">
-                                Favorite
-                              </Badge>
-                            ) : null}
-
-                            {isDeleted ? (
-                              <Badge
-                                variant="outline"
-                                className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
-                              >
-                                In Trash
-                              </Badge>
-                            ) : null}
-                          </div>
-
-                          <div>
-                            <h2 className="text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
-                              {item.shade}
-                            </h2>
-                            <p className="mt-1 text-sm text-zinc-500">{item.brand}</p>
-                          </div>
-
-                          <p className="text-sm leading-5 text-zinc-500">
-                            {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2 pt-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            disabled={isDeleted}
-                            className={`h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
-                              }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void toggleFavorite(item.id);
-                            }}
-                            title="Favorite"
-                          >
-                            <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
-                          </Button>
-
-                          {isOwnedByYou && !isDeleted && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startEditLipstick(item);
-                                }}
-                                title="Edit"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setShareModalItem(item);
-                                }}
-                                title="Share"
-                              >
-                                <Share2 className="h-4 w-4" />
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void deleteOwnedLipstick(item.id);
-                                }}
-                                title="Move to Trash"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-
-                          {!isOwnedByYou && !isDeleted ? (
-                            <Button
-                              variant="outline"
-                              className="rounded-2xl border-rose-100 bg-white/95"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void removeSharedLipstick(item.id);
-                              }}
-                            >
-                              <X className="mr-2 h-4 w-4" />
-                              Remove
-                            </Button>
-                          ) : null}
-
-                          {isOwnedByYou && isDeleted ? (
-                            <>
-                              <Button
-                                variant="outline"
-                                className="rounded-2xl border-rose-100 bg-white/95"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void restoreLipstick(item.id);
-                                }}
-                              >
-                                <RotateCcw className="mr-2 h-4 w-4" />
-                                Restore
-                              </Button>
-
-                              <Button
-                                variant="outline"
-                                className="rounded-2xl border-rose-100 bg-white/95"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void permanentlyDeleteLipstick(item.id);
-                                }}
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Delete Forever
-                              </Button>
-                            </>
-                          ) : null}
-
-                          <Button
-                            variant="outline"
-                            className="rounded-2xl border-rose-100 bg-white/95 px-4"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleExpanded(item.id);
-                            }}
-                            title={isExpanded ? "Collapse" : "Expand"}
-                          >
-                            {isExpanded ? "Hide details" : "View details"}
-                            {isExpanded ? (
-                              <ChevronUp className="ml-2 h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="ml-2 h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <AnimatePresence initial={false}>
-                        {isExpanded ? (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="mt-6 space-y-5 rounded-[24px] border border-rose-100/70 bg-rose-50/35 p-4 md:p-5">
-                              {item.image_url_1 || item.image_url_2 ? (
-                                <div className="flex flex-wrap gap-3">
-                                  {item.image_url_1 ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewImageUrl(item.image_url_1);
-                                      }}
-                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
-                                    >
-                                      <img
-                                        src={item.image_url_1}
-                                        alt="Lipstick photo 1"
-                                        className="h-24 w-24 object-cover"
-                                      />
-                                    </button>
-                                  ) : null}
-
-                                  {item.image_url_2 ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPreviewImageUrl(item.image_url_2);
-                                      }}
-                                      className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
-                                    >
-                                      <img
-                                        src={item.image_url_2}
-                                        alt="Lipstick photo 2"
-                                        className="h-24 w-24 object-cover"
-                                      />
-                                    </button>
-                                  ) : null}
-                                </div>
+                    <Card
+                      className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
+                    >
+                      <CardContent className="p-3 sm:p-4">
+                        <div
+                          className="flex cursor-pointer flex-col gap-3"
+                          onClick={() => toggleExpanded(item.id)}
+                        >
+                          <div className="min-w-0 space-y-3">
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                              {item.colorFamily ? (
+                                <Badge className="shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
+                                  {item.colorFamily}
+                                </Badge>
                               ) : null}
 
-                              <div className="flex gap-2 overflow-x-auto pb-1">
-                                <Badge className="rounded-full">
-                                  {item.status || "No status"}
-                                </Badge>
+                              <Badge
+                                variant="outline"
+                                className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                              >
+                                {isOwnedByYou ? "Owned" : "Shared"}
+                              </Badge>
 
+                              {item.favorite ? (
+                                <Badge variant="outline" className="shrink-0 rounded-full border-rose-200 text-rose-600">
+                                  Favorite
+                                </Badge>
+                              ) : null}
+
+                              {isDeleted ? (
                                 <Badge
                                   variant="outline"
-                                  className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                                  className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
                                 >
-                                  {isOwnedByYou ? "In your collection" : "Shared with you"}
+                                  In Trash
                                 </Badge>
+                              ) : null}
+                            </div>
 
-                                {isDeleted ? (
-                                  <Badge
-                                    variant="outline"
-                                    className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
-                                  >
-                                    In Trash
-                                  </Badge>
-                                ) : null}
+                            <div>
+                              <h2 className="text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
+                                {item.shade}
+                              </h2>
+                              <p className="mt-1 text-sm text-zinc-500">{item.brand}</p>
+                            </div>
 
-                                {item.type ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.type}
-                                  </Badge>
-                                ) : null}
+                            <p className="text-sm leading-5 text-zinc-500">
+                              {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
+                            </p>
+                          </div>
 
-                                {item.finish ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.finish}
-                                  </Badge>
-                                ) : null}
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={isDeleted}
+                              className={`h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
+                                }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                void toggleFavorite(item.id);
+                              }}
+                              title="Favorite"
+                            >
+                              <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
+                            </Button>
 
-                                {item.undertone ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.undertone}
-                                  </Badge>
-                                ) : null}
+                            {isOwnedByYou && !isDeleted && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditLipstick(item);
+                                  }}
+                                  title="Edit"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
 
-                                {item.colorFamily ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.colorFamily}
-                                  </Badge>
-                                ) : null}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setShareModalItem(item);
+                                  }}
+                                  title="Share"
+                                >
+                                  <Share2 className="h-4 w-4" />
+                                </Button>
 
-                                {item.priceTier ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    {item.priceTier}
-                                  </Badge>
-                                ) : null}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void deleteOwnedLipstick(item.id);
+                                  }}
+                                  title="Move to Trash"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
 
-                                {item.favorite ? (
-                                  <Badge variant="secondary" className="rounded-full">
-                                    Favorite
-                                  </Badge>
-                                ) : null}
-                              </div>
+                            {!isOwnedByYou && !isDeleted ? (
+                              <Button
+                                variant="outline"
+                                className="rounded-2xl border-rose-100 bg-white/95"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void removeSharedLipstick(item.id);
+                                }}
+                              >
+                                <X className="mr-2 h-4 w-4" />
+                                Remove
+                              </Button>
+                            ) : null}
 
-                              <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                                <div className="flex items-center gap-2">
-                                  <Sparkles className="h-4 w-4" /> Best for: {item.occasion || "Not added"}
-                                </div>
+                            {isOwnedByYou && isDeleted ? (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/95"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void restoreLipstick(item.id);
+                                  }}
+                                >
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Restore
+                                </Button>
 
-                                <div className="flex items-center gap-2">
-                                  <Calendar className="h-4 w-4" />
-                                  {item.purchaseDate || "No date added"}
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  className="rounded-2xl border-rose-100 bg-white/95"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    void permanentlyDeleteLipstick(item.id);
+                                  }}
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Forever
+                                </Button>
+                              </>
+                            ) : null}
 
-                                <div className="flex items-center gap-2 sm:col-span-2">
-                                  <Tag className="h-4 w-4" />
-                                  {item.notes || "No notes added yet."}
-                                </div>
+                            <Button
+                              variant="outline"
+                              className="rounded-2xl border-rose-100 bg-white/95 px-4"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleExpanded(item.id);
+                              }}
+                              title={isExpanded ? "Collapse" : "Expand"}
+                            >
+                              {isExpanded ? "Hide details" : "View details"}
+                              {isExpanded ? (
+                                <ChevronUp className="ml-2 h-4 w-4" />
+                              ) : (
+                                <ChevronDown className="ml-2 h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
 
-                                {item.barcode ? (
-                                  <div className="flex items-center gap-2 sm:col-span-2">
-                                    <Tag className="h-4 w-4" />
-                                    Barcode: {item.barcode}
+                        <AnimatePresence initial={false}>
+                          {isExpanded ? (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-6 space-y-5 rounded-[24px] border border-rose-100/70 bg-rose-50/35 p-4 md:p-5">
+                                {item.image_url_1 || item.image_url_2 ? (
+                                  <div className="flex flex-wrap gap-3">
+                                    {item.image_url_1 ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewImageUrl(item.image_url_1);
+                                        }}
+                                        className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                      >
+                                        <img
+                                          src={item.image_url_1}
+                                          alt="Lipstick photo 1"
+                                          className="h-24 w-24 object-cover"
+                                        />
+                                      </button>
+                                    ) : null}
+
+                                    {item.image_url_2 ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPreviewImageUrl(item.image_url_2);
+                                        }}
+                                        className="overflow-hidden rounded-2xl border border-rose-100 bg-white"
+                                      >
+                                        <img
+                                          src={item.image_url_2}
+                                          alt="Lipstick photo 2"
+                                          className="h-24 w-24 object-cover"
+                                        />
+                                      </button>
+                                    ) : null}
                                   </div>
                                 ) : null}
-                              </div>
 
-                              <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
-                                {!isDeleted ? (
-                                  <Button
-                                    variant={compareIds.includes(item.id) ? "default" : "outline"}
-                                    className="rounded-2xl border-rose-100"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleCompareSelection(item.id);
-                                    }}
+                                <div className="flex gap-2 overflow-x-auto pb-1">
+                                  <Badge className="rounded-full">
+                                    {item.status || "No status"}
+                                  </Badge>
+
+                                  <Badge
+                                    variant="outline"
+                                    className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
                                   >
-                                    {compareIds.includes(item.id) ? "Selected" : "Compare"}
-                                  </Button>
-                                ) : null}
+                                    {isOwnedByYou ? "In your collection" : "Shared with you"}
+                                  </Badge>
 
-                                {isDeleted && deletedDaysAgo !== null ? (
-                                  <p className="text-sm text-slate-600">
-                                    Deleted {deletedDaysAgo} day{deletedDaysAgo === 1 ? "" : "s"} ago.
-                                  </p>
-                                ) : null}
+                                  {isDeleted ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                    >
+                                      In Trash
+                                    </Badge>
+                                  ) : null}
 
-                                {isDeleted && daysRemaining !== null ? (
-                                  <p className="text-sm text-slate-600">
-                                    {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before permanent cleanup.
-                                  </p>
-                                ) : null}
+                                  {item.type ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.type}
+                                    </Badge>
+                                  ) : null}
+
+                                  {item.finish ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.finish}
+                                    </Badge>
+                                  ) : null}
+
+                                  {item.undertone ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.undertone}
+                                    </Badge>
+                                  ) : null}
+
+                                  {item.colorFamily ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.colorFamily}
+                                    </Badge>
+                                  ) : null}
+
+                                  {item.priceTier ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      {item.priceTier}
+                                    </Badge>
+                                  ) : null}
+
+                                  {item.favorite ? (
+                                    <Badge variant="secondary" className="rounded-full">
+                                      Favorite
+                                    </Badge>
+                                  ) : null}
+                                </div>
+
+                                <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                  <div className="flex items-center gap-2">
+                                    <Sparkles className="h-4 w-4" /> Best for: {item.occasion || "Not added"}
+                                  </div>
+
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    {item.purchaseDate || "No date added"}
+                                  </div>
+
+                                  <div className="flex items-center gap-2 sm:col-span-2">
+                                    <Tag className="h-4 w-4" />
+                                    {item.notes || "No notes added yet."}
+                                  </div>
+
+                                  {item.barcode ? (
+                                    <div className="flex items-center gap-2 sm:col-span-2">
+                                      <Tag className="h-4 w-4" />
+                                      Barcode: {item.barcode}
+                                    </div>
+                                  ) : null}
+                                </div>
+
+                                <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
+                                  {!isDeleted ? (
+                                    <Button
+                                      variant={compareIds.includes(item.id) ? "default" : "outline"}
+                                      className="rounded-2xl border-rose-100"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleCompareSelection(item.id);
+                                      }}
+                                    >
+                                      {compareIds.includes(item.id) ? "Selected" : "Compare"}
+                                    </Button>
+                                  ) : null}
+
+                                  {isDeleted && deletedDaysAgo !== null ? (
+                                    <p className="text-sm text-slate-600">
+                                      Deleted {deletedDaysAgo} day{deletedDaysAgo === 1 ? "" : "s"} ago.
+                                    </p>
+                                  ) : null}
+
+                                  {isDeleted && daysRemaining !== null ? (
+                                    <p className="text-sm text-slate-600">
+                                      {daysRemaining} day{daysRemaining === 1 ? "" : "s"} remaining before permanent cleanup.
+                                    </p>
+                                  ) : null}
+                                </div>
+
+
                               </div>
+                            </motion.div>
+                          ) : null}
+                        </AnimatePresence>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
 
-
-                            </div>
-                          </motion.div>
-                        ) : null}
-                      </AnimatePresence>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-
-            })
-          )}
-        </div>
+              })
+            )}
+          </div>
+        )}
       </div>
+
+      {mainTab === "dashboard" && (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Total Lipsticks</p>
+            <p className="text-2xl font-semibold text-zinc-900">{visibleItems.length}</p>
+          </div>
+
+          <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Favorites</p>
+            <p className="text-2xl font-semibold text-zinc-900">
+              {visibleItems.filter((item) => item.favorite).length}
+            </p>
+          </div>
+        </div>
+      )}
+
       {compareIds.length > 0 && (
         <div className="fixed bottom-4 left-1/2 z-50 w-[92%] -translate-x-1/2 rounded-2xl border border-rose-100 bg-white/95 px-4 py-3 shadow-lg backdrop-blur">
 
