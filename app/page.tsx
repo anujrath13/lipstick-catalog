@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import {
   Search,
@@ -840,6 +841,7 @@ export default function LipstickCatalogApp() {
     setIsAddFormOpen(true);
   };
 
+
   const handleRefreshView = async () => {
     setExpandedItems([]);
     setIsAddFormOpen(false);
@@ -1564,6 +1566,7 @@ export default function LipstickCatalogApp() {
         (favoritesFilter === "favorites" && item.favorite) ||
         (favoritesFilter === "nonfavorites" && !item.favorite);
 
+
       return (
         matchesQuery &&
         matchesType &&
@@ -1605,6 +1608,18 @@ export default function LipstickCatalogApp() {
     sortBy,
     session,
   ]);
+
+  const colorFamilyData = Object.entries(
+    visibleItems.reduce((acc: Record<string, number>, item: LipstickItem) => {
+      const color = item.colorFamily || "Unknown";
+      acc[color] = (acc[color] || 0) + 1;
+      return acc;
+    }, {})
+  ).map(([name, value]) => ({
+    name,
+    value,
+  }));
+
 
   const activeFilterChips = [
     typeFilter !== "all" ? { key: "type", label: typeFilter } : null,
@@ -3352,6 +3367,58 @@ export default function LipstickCatalogApp() {
             <p className="text-2xl font-semibold text-zinc-900">
               {visibleItems.filter((item) => item.favorite).length}
             </p>
+          </div>
+          <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+            <p className="text-sm text-zinc-500">Top Brand</p>
+            <p className="text-2xl font-semibold text-zinc-900">
+              {(() => {
+                const counts: Record<string, number> = {};
+
+                visibleItems.forEach((item) => {
+                  if (!item.brand) return;
+                  counts[item.brand] = (counts[item.brand] || 0) + 1;
+                });
+
+                const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+
+                return top ? `${top[0]} (${top[1]})` : "—";
+              })()}
+            </p>
+          </div>
+          <div className="col-span-full rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+            <p className="mb-4 text-sm text-zinc-500">Color Family Distribution</p>
+
+            <div className="h-64 w-full">
+              <ResponsiveContainer>
+                <PieChart>
+                  <Pie
+                    data={colorFamilyData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    label
+                  >
+                    {colorFamilyData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={[
+                          "#fda4af", // rose
+                          "#fb7185",
+                          "#f43f5e",
+                          "#e11d48",
+                          "#be123c",
+                          "#9f1239",
+                          "#881337",
+                        ][index % 7]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       )}
