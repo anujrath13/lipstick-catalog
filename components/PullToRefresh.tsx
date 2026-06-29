@@ -1,6 +1,5 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
 import {
   useEffect,
   useRef,
@@ -8,6 +7,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
+import { DancingCat } from "@/components/DancingCat";
 
 type PullToRefreshProps = {
   onRefresh: () => Promise<void>;
@@ -98,7 +98,7 @@ export function PullToRefresh({
       const distance = pullDistanceRef.current;
       if (distance >= PULL_THRESHOLD) {
         setRefreshing(true);
-        setDistance(52);
+        setDistance(72);
         try {
           await onRefreshRef.current();
           setShowSuccess(true);
@@ -146,7 +146,7 @@ export function PullToRefresh({
 
   const indicatorHeight =
     pullDistance > 0 || refreshing || showSuccess
-      ? Math.max(pullDistance, refreshing || showSuccess ? 52 : 0)
+      ? Math.max(pullDistance, refreshing || showSuccess ? 72 : 0)
       : 0;
 
   const isActive = indicatorHeight > 0;
@@ -164,22 +164,22 @@ export function PullToRefresh({
       >
         {refreshing ? (
           <div className="mb-2 flex items-center gap-2 rounded-full border border-rose-100 bg-white/95 px-4 py-2 text-rose-500 shadow-sm backdrop-blur">
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <DancingCat mode="dance" size={40} />
             <span className="text-sm font-medium">Refreshing...</span>
           </div>
         ) : showSuccess ? (
           <div className="mb-2 flex items-center gap-2 rounded-full border border-emerald-100 bg-white/95 px-4 py-2 text-emerald-600 shadow-sm backdrop-blur">
-            <Check className="h-5 w-5" />
+            <DancingCat mode="success" size={40} />
             <span className="text-sm font-medium">Refreshed</span>
           </div>
         ) : pullDistance > PULL_THRESHOLD * 0.55 ? (
           <div className="mb-2 flex items-center gap-2 rounded-full border border-rose-100 bg-white/95 px-4 py-2 text-rose-500 shadow-sm backdrop-blur">
-            <Loader2 className="h-5 w-5" />
+            <DancingCat mode="dance" size={36} />
             <span className="text-sm font-medium">Release to refresh</span>
           </div>
         ) : pullDistance > 8 ? (
           <div className="mb-2 flex items-center gap-2 rounded-full border border-rose-100/80 bg-white/90 px-4 py-2 text-rose-400 shadow-sm backdrop-blur">
-            <Loader2 className="h-5 w-5 opacity-60" />
+            <DancingCat mode="pull" size={34} />
             <span className="text-sm">Pull to refresh</span>
           </div>
         ) : null}
