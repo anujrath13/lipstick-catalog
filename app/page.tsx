@@ -106,6 +106,8 @@ type LipstickFormValues = {
 
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
 const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 30 day
+// setTimeout delay is a 32-bit signed int; longer values overflow and fire immediately.
+const MAX_SET_TIMEOUT_MS = 2_147_483_647;
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = REMEMBER_ME_STORAGE_KEY;
 const LAST_EMAIL_KEY = "lipstick_last_email";
@@ -242,6 +244,7 @@ export default function LipstickCatalogApp() {
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityCheckRef = useRef(0);
   const freshLoginRef = useRef(false);
+  const signingInRef = useRef(false);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -594,8 +597,14 @@ export default function LipstickCatalogApp() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       authListenerHandled = true;
+
+      if (event === "SIGNED_IN") {
+        freshLoginRef.current = true;
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+      }
+
       setSession(newSession);
       setAuthLoading(false);
     });
@@ -616,7 +625,7 @@ export default function LipstickCatalogApp() {
   }, []);
 
   useEffect(() => {
-    if (!authLoading && !session) {
+    if (!authLoading && !session && !signingInRef.current) {
       localStorage.removeItem(LAST_ACTIVITY_KEY);
       sessionStorage.removeItem(FRESH_LOGIN_KEY);
       freshLoginRef.current = false;
@@ -655,7 +664,28 @@ export default function LipstickCatalogApp() {
         clearTimeout(inactivityTimeoutRef.current);
       }
 
+      const safeDelay = Math.min(Math.max(delayMs, 0), MAX_SET_TIMEOUT_MS);
+
       inactivityTimeoutRef.current = setTimeout(async () => {
+        if (checkId !== inactivityCheckRef.current) return;
+
+        const timeoutMs = rememberMeEnabled
+          ? REMEMBER_ME_TIMEOUT_MS
+          : INACTIVITY_TIMEOUT_MS;
+        const lastActivityRaw = localStorage.getItem(LAST_ACTIVITY_KEY);
+        const lastActivity = Number(lastActivityRaw ?? 0);
+        const elapsed = Date.now() - lastActivity;
+
+        if (
+          lastActivityRaw &&
+          !Number.isNaN(lastActivity) &&
+          lastActivity > 0 &&
+          elapsed < timeoutMs
+        ) {
+          scheduleInactivitySignOut(timeoutMs - elapsed, rememberMeEnabled, checkId);
+          return;
+        }
+
         if (checkId !== inactivityCheckRef.current) return;
 
         await supabase.auth.signOut();
@@ -668,7 +698,13 @@ export default function LipstickCatalogApp() {
             ? "You were logged out after 30 days of inactivity."
             : "You were logged out after 20 minutes of inactivity."
         );
-      }, delayMs);
+      }, safeDelay);
+    };
+
+    const isRecentSignIn = () => {
+      const signedInAt = session.user.last_sign_in_at;
+      if (!signedInAt) return false;
+      return Date.now() - new Date(signedInAt).getTime() < 5 * 60 * 1000;
     };
 
     const checkInactivity = async () => {
@@ -679,7 +715,9 @@ export default function LipstickCatalogApp() {
         : INACTIVITY_TIMEOUT_MS;
 
       const isFreshLogin =
-        freshLoginRef.current || sessionStorage.getItem(FRESH_LOGIN_KEY) === "1";
+        freshLoginRef.current ||
+        sessionStorage.getItem(FRESH_LOGIN_KEY) === "1" ||
+        isRecentSignIn();
       if (isFreshLogin) {
         freshLoginRef.current = false;
         sessionStorage.removeItem(FRESH_LOGIN_KEY);
@@ -710,6 +748,8 @@ export default function LipstickCatalogApp() {
           clearTimeout(inactivityTimeoutRef.current);
           inactivityTimeoutRef.current = null;
         }
+
+        if (checkId !== inactivityCheckRef.current) return;
 
         await supabase.auth.signOut();
         if (checkId !== inactivityCheckRef.current) return;
@@ -1115,47 +1155,52 @@ export default function LipstickCatalogApp() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
+    signingInRef.current = true;
     inactivityCheckRef.current += 1;
     freshLoginRef.current = true;
     sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
     setAuthMessage("");
 
-    await prepareForSignIn(rememberMe);
-    localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
-    });
-
-    if (error) {
-      freshLoginRef.current = false;
-      sessionStorage.removeItem(FRESH_LOGIN_KEY);
-      localStorage.removeItem(LAST_ACTIVITY_KEY);
-      setAuthMessage(error.message);
-      return;
-    }
-
-    if (data.user) {
-      await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
-      freshLoginRef.current = true;
-      sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
+    try {
+      await prepareForSignIn(rememberMe);
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
-      localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
-      localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
 
-      if (data.session) {
-        setSession(data.session);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password,
+      });
+
+      if (error) {
+        freshLoginRef.current = false;
+        sessionStorage.removeItem(FRESH_LOGIN_KEY);
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+        setAuthMessage(error.message);
+        return;
       }
 
-      setEmail(normalizedEmail);
-      setPassword("");
-      setAuthMessage("Signed in.");
-      setIsLoginSuccessAnimating(true);
+      if (data.user) {
+        await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
+        freshLoginRef.current = true;
+        sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+        localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+        localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
 
-      setTimeout(() => {
-        setIsLoginSuccessAnimating(false);
-      }, 2200);
+        if (data.session) {
+          setSession(data.session);
+        }
+
+        setEmail(normalizedEmail);
+        setPassword("");
+        setAuthMessage("Signed in.");
+        setIsLoginSuccessAnimating(true);
+
+        setTimeout(() => {
+          setIsLoginSuccessAnimating(false);
+        }, 2200);
+      }
+    } finally {
+      signingInRef.current = false;
     }
   }
 
