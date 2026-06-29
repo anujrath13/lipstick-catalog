@@ -34,7 +34,13 @@ import {
   ArrowRight,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase";
+import {
+  clearAllAuthStorage,
+  migrateAuthStorageIfNeeded,
+  prepareForSignIn,
+  REMEMBER_ME_STORAGE_KEY,
+  supabase,
+} from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +107,7 @@ type LipstickFormValues = {
 const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
 const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 30 day
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
-const REMEMBER_ME_KEY = "lipstick_remember_me";
+const REMEMBER_ME_KEY = REMEMBER_ME_STORAGE_KEY;
 const LAST_EMAIL_KEY = "lipstick_last_email";
 const FRESH_LOGIN_KEY = "lipstick_fresh_login";
 
@@ -235,6 +241,7 @@ export default function LipstickCatalogApp() {
 
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityCheckRef = useRef(0);
+  const freshLoginRef = useRef(false);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -583,6 +590,8 @@ export default function LipstickCatalogApp() {
   useEffect(() => {
     let authListenerHandled = false;
 
+    migrateAuthStorageIfNeeded();
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -592,6 +601,11 @@ export default function LipstickCatalogApp() {
     });
 
     supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        clearAllAuthStorage();
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+      }
+
       if (!authListenerHandled) {
         setSession(data.session ?? null);
       }
@@ -600,6 +614,14 @@ export default function LipstickCatalogApp() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!authLoading && !session) {
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
+      sessionStorage.removeItem(FRESH_LOGIN_KEY);
+      freshLoginRef.current = false;
+    }
+  }, [authLoading, session]);
 
   useEffect(() => {
     if (session) {
@@ -640,6 +662,7 @@ export default function LipstickCatalogApp() {
         if (checkId !== inactivityCheckRef.current) return;
 
         localStorage.removeItem(LAST_ACTIVITY_KEY);
+        localStorage.removeItem(REMEMBER_ME_KEY);
         setAuthMessage(
           rememberMeEnabled
             ? "You were logged out after 30 days of inactivity."
@@ -655,8 +678,10 @@ export default function LipstickCatalogApp() {
         ? REMEMBER_ME_TIMEOUT_MS
         : INACTIVITY_TIMEOUT_MS;
 
-      const isFreshLogin = sessionStorage.getItem(FRESH_LOGIN_KEY) === "1";
+      const isFreshLogin =
+        freshLoginRef.current || sessionStorage.getItem(FRESH_LOGIN_KEY) === "1";
       if (isFreshLogin) {
+        freshLoginRef.current = false;
         sessionStorage.removeItem(FRESH_LOGIN_KEY);
         updateLastActivity();
         scheduleInactivitySignOut(timeoutMs, rememberMeEnabled, checkId);
@@ -690,6 +715,7 @@ export default function LipstickCatalogApp() {
         if (checkId !== inactivityCheckRef.current) return;
 
         localStorage.removeItem(LAST_ACTIVITY_KEY);
+        localStorage.removeItem(REMEMBER_ME_KEY);
         setAuthMessage(
           rememberMeEnabled
             ? "You were logged out after 30 days of inactivity."
@@ -1090,9 +1116,12 @@ export default function LipstickCatalogApp() {
     const normalizedEmail = email.trim().toLowerCase();
 
     inactivityCheckRef.current += 1;
+    freshLoginRef.current = true;
     sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
+    setAuthMessage("");
+
+    await prepareForSignIn(rememberMe);
     localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
-    localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
@@ -1100,6 +1129,7 @@ export default function LipstickCatalogApp() {
     });
 
     if (error) {
+      freshLoginRef.current = false;
       sessionStorage.removeItem(FRESH_LOGIN_KEY);
       localStorage.removeItem(LAST_ACTIVITY_KEY);
       setAuthMessage(error.message);
@@ -1108,6 +1138,7 @@ export default function LipstickCatalogApp() {
 
     if (data.user) {
       await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
+      freshLoginRef.current = true;
       sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
@@ -1136,10 +1167,12 @@ export default function LipstickCatalogApp() {
       inactivityTimeoutRef.current = null;
     }
 
+    freshLoginRef.current = false;
     sessionStorage.removeItem(FRESH_LOGIN_KEY);
     localStorage.removeItem(LAST_ACTIVITY_KEY);
     localStorage.removeItem(REMEMBER_ME_KEY);
     await supabase.auth.signOut();
+    clearAllAuthStorage();
   }
 
   const validateForm = () => {
