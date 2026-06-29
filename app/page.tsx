@@ -2311,6 +2311,7 @@ export default function LipstickCatalogApp() {
                           <SelectItem value="Nude">Nude</SelectItem>
                           <SelectItem value="Coral">Coral</SelectItem>
                           <SelectItem value="Mauve">Mauve</SelectItem>
+                          <SelectItem value="Pinkish Brownish">Pinkish Brownish</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -2917,6 +2918,7 @@ export default function LipstickCatalogApp() {
                       <SelectItem value="Nude">Nude</SelectItem>
                       <SelectItem value="Coral">Coral</SelectItem>
                       <SelectItem value="Mauve">Mauve</SelectItem>
+                      <SelectItem value="Pinkish Brownish">Pinkish Brownish</SelectItem>
                     </SelectContent>
                   </Select>
 
