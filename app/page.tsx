@@ -98,7 +98,7 @@ type LipstickFormValues = {
   priceTier: string;
 };
 
-const INACTIVITY_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
+const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
 const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 30 day
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = "lipstick_remember_me";
@@ -665,7 +665,7 @@ export default function LipstickCatalogApp() {
         setAuthMessage(
           rememberMeEnabled
             ? "You were logged out after 30 days of inactivity."
-            : "You were logged out after 30 days of inactivity."
+            : "You were logged out after 20 minutes of inactivity."
         );
         return;
       }
@@ -682,7 +682,7 @@ export default function LipstickCatalogApp() {
         setAuthMessage(
           rememberMeEnabled
             ? "You were logged out after 30 days of inactivity."
-            : "You were logged out after 30 days of inactivity."
+            : "You were logged out after 20 minutes of inactivity."
         );
       }, remainingTime);
     };
@@ -1060,10 +1060,6 @@ export default function LipstickCatalogApp() {
 
       if (data.user) {
         await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
-
-        // Reset any old inactivity timestamp
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
-        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       }
 
       localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
