@@ -1,0 +1,14 @@
+---
+description: Auto-commit and deploy to main after implementing features
+alwaysApply: true
+---
+
+# Auto-deploy
+
+After completing implementation work in this repo, commit and push to `origin/main` without asking the user for deployment confirmation.
+
+- Do not ask "want me to deploy?" after feature work
+- Use clear commit messages focused on why
+- Push to `main` so Vercel deploys automatically
+
+Exception: still ask before destructive git operations (force push, hard reset, etc.).
