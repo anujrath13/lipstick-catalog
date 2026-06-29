@@ -98,7 +98,6 @@ type LipstickFormValues = {
   priceTier: string;
 };
 
-const REMEMBER_ME_KEY = "lipstick_remember_me";
 const LAST_EMAIL_KEY = "lipstick_last_email";
 
 const todayString = () => new Date().toISOString().split("T")[0];
@@ -558,13 +557,11 @@ export default function LipstickCatalogApp() {
   }, []);
 
   useEffect(() => {
-    const rememberMeSaved = localStorage.getItem(REMEMBER_ME_KEY) === "true";
     const savedEmail = localStorage.getItem(LAST_EMAIL_KEY);
 
-    setRememberMe(rememberMeSaved);
-
-    if (rememberMeSaved && savedEmail) {
+    if (savedEmail) {
       setEmail(savedEmail);
+      setRememberMe(true);
     }
   }, []);
 
@@ -938,8 +935,6 @@ export default function LipstickCatalogApp() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
-
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
       password,
@@ -952,8 +947,6 @@ export default function LipstickCatalogApp() {
 
     if (data.user) {
       await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
-      localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
-
       if (rememberMe) {
         localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
       } else {
@@ -967,7 +960,6 @@ export default function LipstickCatalogApp() {
   }
 
   async function handleSignOut() {
-    localStorage.removeItem(REMEMBER_ME_KEY);
     await supabase.auth.signOut();
   }
 
