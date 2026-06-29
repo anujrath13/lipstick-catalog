@@ -245,6 +245,7 @@ export default function LipstickCatalogApp() {
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const collectionSearchRef = useRef<HTMLDivElement | null>(null);
 
   const getStoragePathFromPublicUrl = (url: string | null | undefined) => {
     if (!url) return null;
@@ -2020,6 +2021,11 @@ export default function LipstickCatalogApp() {
   }
 
   return (
+    <PullToRefresh
+      onRefresh={handlePullRefresh}
+      disabled={loading}
+      scrollAnchorRef={collectionSearchRef}
+    >
     <div
       className="min-h-screen px-3 py-4 sm:px-4 sm:py-6 md:p-8"
       style={{
@@ -2866,7 +2872,10 @@ export default function LipstickCatalogApp() {
         </motion.section>
 
         {mainTab === "collection" && (
-          <div className="sticky top-0 z-30 -mx-3 space-y-4 border-b border-rose-100/80 bg-[#fff9fc]/95 px-3 py-3 backdrop-blur-md sm:-mx-4 sm:px-4 md:mx-0 md:rounded-[28px] md:border md:px-5 md:py-4">
+          <div
+            ref={collectionSearchRef}
+            className="sticky top-0 z-30 -mx-3 space-y-4 border-b border-rose-100/80 bg-[#fff9fc]/95 px-3 py-3 backdrop-blur-md sm:-mx-4 sm:px-4 md:mx-0 md:rounded-[28px] md:border md:px-5 md:py-4"
+          >
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
               <Input
@@ -2998,7 +3007,6 @@ export default function LipstickCatalogApp() {
         )}
 
         {mainTab === "collection" && (
-          <PullToRefresh onRefresh={handlePullRefresh} disabled={loading}>
           <div className="space-y-4">
             {loading ? (
               <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
@@ -3419,7 +3427,6 @@ export default function LipstickCatalogApp() {
               })
             )}
           </div>
-          </PullToRefresh>
         )}
       </div>
 
@@ -3545,5 +3552,6 @@ export default function LipstickCatalogApp() {
         </div>
       )}
     </div>
+    </PullToRefresh>
   );
 }
