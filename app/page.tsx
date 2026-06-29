@@ -245,6 +245,7 @@ export default function LipstickCatalogApp() {
   const inactivityCheckRef = useRef(0);
   const freshLoginRef = useRef(false);
   const signingInRef = useRef(false);
+  const loginGraceUntilRef = useRef(0);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -591,17 +592,19 @@ export default function LipstickCatalogApp() {
   }, [isAddFormOpen]);
 
   useEffect(() => {
-    let authListenerHandled = false;
+    let ignoreStaleGetSession = false;
 
     migrateAuthStorageIfNeeded();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
-      authListenerHandled = true;
+      ignoreStaleGetSession = true;
 
       if (event === "SIGNED_IN") {
         freshLoginRef.current = true;
+        loginGraceUntilRef.current = Date.now() + 15_000;
+        inactivityCheckRef.current += 1;
         localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       }
 
@@ -610,14 +613,12 @@ export default function LipstickCatalogApp() {
     });
 
     supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        clearAllAuthStorage();
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
+      if (ignoreStaleGetSession) {
+        setAuthLoading(false);
+        return;
       }
 
-      if (!authListenerHandled) {
-        setSession(data.session ?? null);
-      }
+      setSession(data.session ?? null);
       setAuthLoading(false);
     });
 
@@ -631,6 +632,12 @@ export default function LipstickCatalogApp() {
       freshLoginRef.current = false;
     }
   }, [authLoading, session]);
+
+  useEffect(() => {
+    if (!session && authMessage === "Signed in.") {
+      setAuthMessage("");
+    }
+  }, [session, authMessage]);
 
   useEffect(() => {
     if (session) {
@@ -668,6 +675,15 @@ export default function LipstickCatalogApp() {
 
       inactivityTimeoutRef.current = setTimeout(async () => {
         if (checkId !== inactivityCheckRef.current) return;
+
+        if (loginGraceUntilRef.current > Date.now()) {
+          scheduleInactivitySignOut(
+            loginGraceUntilRef.current - Date.now(),
+            rememberMeEnabled,
+            checkId
+          );
+          return;
+        }
 
         const timeoutMs = rememberMeEnabled
           ? REMEMBER_ME_TIMEOUT_MS
@@ -714,6 +730,12 @@ export default function LipstickCatalogApp() {
         ? REMEMBER_ME_TIMEOUT_MS
         : INACTIVITY_TIMEOUT_MS;
 
+      if (loginGraceUntilRef.current > Date.now()) {
+        updateLastActivity();
+        scheduleInactivitySignOut(timeoutMs, rememberMeEnabled, checkId);
+        return;
+      }
+
       const isFreshLogin =
         freshLoginRef.current ||
         sessionStorage.getItem(FRESH_LOGIN_KEY) === "1" ||
@@ -750,6 +772,7 @@ export default function LipstickCatalogApp() {
         }
 
         if (checkId !== inactivityCheckRef.current) return;
+        if (loginGraceUntilRef.current > Date.now()) return;
 
         await supabase.auth.signOut();
         if (checkId !== inactivityCheckRef.current) return;
@@ -1162,8 +1185,9 @@ export default function LipstickCatalogApp() {
     setAuthMessage("");
 
     try {
-      await prepareForSignIn(rememberMe);
+      prepareForSignIn(rememberMe);
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+      loginGraceUntilRef.current = Date.now() + 15_000;
 
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
@@ -1171,7 +1195,9 @@ export default function LipstickCatalogApp() {
       });
 
       if (error) {
+        signingInRef.current = false;
         freshLoginRef.current = false;
+        loginGraceUntilRef.current = 0;
         sessionStorage.removeItem(FRESH_LOGIN_KEY);
         localStorage.removeItem(LAST_ACTIVITY_KEY);
         setAuthMessage(error.message);
@@ -1181,13 +1207,17 @@ export default function LipstickCatalogApp() {
       if (data.user) {
         await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
         freshLoginRef.current = true;
+        loginGraceUntilRef.current = Date.now() + 15_000;
         sessionStorage.setItem(FRESH_LOGIN_KEY, "1");
         localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
         localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
         localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
 
         if (data.session) {
-          setSession(data.session);
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
         }
 
         setEmail(normalizedEmail);
@@ -1198,9 +1228,17 @@ export default function LipstickCatalogApp() {
         setTimeout(() => {
           setIsLoginSuccessAnimating(false);
         }, 2200);
+
+        setTimeout(() => {
+          signingInRef.current = false;
+        }, 3000);
       }
-    } finally {
+    } catch (error) {
       signingInRef.current = false;
+      freshLoginRef.current = false;
+      loginGraceUntilRef.current = 0;
+      console.error(error);
+      setAuthMessage("Could not sign in. Please try again.");
     }
   }
 

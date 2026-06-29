@@ -87,8 +87,7 @@ export function migrateAuthStorageIfNeeded() {
 }
 
 /** Clear conflicting sessions before a new sign-in attempt. */
-export async function prepareForSignIn(rememberMe: boolean) {
+export function prepareForSignIn(rememberMe: boolean) {
   localStorage.setItem(REMEMBER_ME_STORAGE_KEY, rememberMe ? "true" : "false");
-  await supabase.auth.signOut();
   clearAllAuthStorage();
 }
