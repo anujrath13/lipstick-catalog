@@ -154,7 +154,7 @@ export function PullToRefresh({
   return (
     <>
       <div
-        className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-end justify-center overflow-hidden transition-[height] duration-200 ease-out lg:hidden"
+        className="pointer-events-none fixed inset-x-0 top-0 z-[60] flex items-end justify-center overflow-hidden transition-[height] duration-200 ease-out lg:hidden"
         style={{
           height: indicatorHeight,
           paddingTop: "env(safe-area-inset-top, 0px)",

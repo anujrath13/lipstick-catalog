@@ -878,7 +878,6 @@ export default function LipstickCatalogApp() {
 
   const handlePullRefresh = async () => {
     await refreshDataOnly();
-    showNotice("success", "Library refreshed.");
   };
 
   const exportVisibleItemsToCsv = () => {
