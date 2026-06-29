@@ -4,6 +4,8 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { PullToRefresh } from "@/components/PullToRefresh";
+import { SwipeableCard } from "@/components/SwipeableCard";
 import {
   Search,
   Plus,
@@ -871,6 +873,10 @@ export default function LipstickCatalogApp() {
     clearFilters(false);
     await refreshDataOnly();
     showNotice("success", "Library refreshed.");
+  };
+
+  const handlePullRefresh = async () => {
+    await refreshDataOnly();
   };
 
   const exportVisibleItemsToCsv = () => {
@@ -2673,141 +2679,6 @@ export default function LipstickCatalogApp() {
                 </div>
               </div>
 
-              {mainTab === "collection" && (
-                <>
-                  <div className="relative">
-                    <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-                    <Input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Search by shade, brand, finish, notes..."
-                      className="w-full h-12 sm:h-14 rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm"
-                    />
-                  </div>
-
-
-                  <div className="space-y-4">
-                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                      <Button
-                        variant={quickTab === "all" ? "default" : "outline"}
-                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "all"
-                          ? "bg-zinc-950 text-white"
-                          : "border-rose-100 bg-white/80 text-zinc-700"
-                          }`}
-                        onClick={() => setQuickTab("all")}
-                      >
-                        All
-                      </Button>
-
-                      <Button
-                        variant={quickTab === "owned" ? "default" : "outline"}
-                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "owned"
-                          ? "bg-zinc-950 text-white"
-                          : "border-rose-100 bg-white/80 text-zinc-700"
-                          }`}
-                        onClick={() => setQuickTab("owned")}
-                      >
-                        Owned
-                      </Button>
-
-                      <Button
-                        variant={quickTab === "shared" ? "default" : "outline"}
-                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "shared"
-                          ? "bg-zinc-950 text-white"
-                          : "border-rose-100 bg-white/80 text-zinc-700"
-                          }`}
-                        onClick={() => setQuickTab("shared")}
-                      >
-                        Shared
-                      </Button>
-
-                      <Button
-                        variant={quickTab === "trash" ? "default" : "outline"}
-                        className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "trash"
-                          ? "bg-zinc-950 text-white"
-                          : "border-rose-100 bg-white/80 text-zinc-700"
-                          }`}
-                        onClick={() => setQuickTab("trash")}
-                      >
-                        Trash
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
-                      <Button
-                        variant="outline"
-                        className={`shrink-0 rounded-xl h-9 px-3 text-sm ${isFiltersOpen
-                          ? "border-rose-300 bg-rose-50 text-rose-700"
-                          : "border-rose-100 bg-white/90 text-zinc-700"
-                          }`}
-                        onClick={() => setIsFiltersOpen((prev) => !prev)}
-                      >
-                        <Funnel className="mr-2 h-4 w-4" />
-                        Filters
-                        {isFiltersOpen ? (
-                          <ChevronUp className="ml-2 h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="ml-2 h-4 w-4" />
-                        )}
-                      </Button>
-
-                      <div className="flex shrink-0 items-center gap-2">
-
-
-                        <Button
-                          variant="ghost"
-                          className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
-                          onClick={() => void handleRefreshView()}
-                        >
-                          <RotateCcw className="mr-2 h-4 w-4" />
-                          Refresh
-                        </Button>
-
-                        <Button
-                          variant="ghost"
-                          className="shrink-0 rounded-xl h-9 px-3 text-sm text-zinc-600 hover:bg-rose-50"
-                          onClick={exportVisibleItemsToCsv}
-                        >
-                          <Download className="mr-2 h-4 w-4" />
-                          Export
-                        </Button>
-                      </div>
-                    </div>
-                    {activeFilterChips.length > 0 && (
-                      <div className="flex flex-wrap items-center gap-2">
-                        {activeFilterChips.map((chip) => (
-                          <button
-                            key={chip.key}
-                            type="button"
-                            onClick={() => {
-                              if (chip.key === "type") setTypeFilter("all");
-                              if (chip.key === "finish") setFinishFilter("all");
-                              if (chip.key === "undertone") setUndertoneFilter("all");
-                              if (chip.key === "colorFamily") setColorFamilyFilter("all");
-                              if (chip.key === "priceTier") setPriceTierFilter("all");
-                              if (chip.key === "status") setStatusFilter("all");
-                              if (chip.key === "ownership") setOwnershipFilter("all");
-                              if (chip.key === "favorites") setFavoritesFilter("all");
-                            }}
-                            className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 hover:bg-rose-100"
-                          >
-                            {chip.label}
-                            <X className="h-3 w-3" />
-                          </button>
-                        ))}
-
-                        <button
-                          type="button"
-                          onClick={() => clearFilters()}
-                          className="text-sm text-zinc-500 hover:text-zinc-700"
-                        >
-                          Clear all
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
             </div>
 
             <div className="space-y-3">
@@ -2994,6 +2865,139 @@ export default function LipstickCatalogApp() {
         </motion.section>
 
         {mainTab === "collection" && (
+          <div className="sticky top-0 z-30 -mx-3 space-y-4 border-b border-rose-100/80 bg-[#fff9fc]/95 px-3 py-3 backdrop-blur-md sm:-mx-4 sm:px-4 md:mx-0 md:rounded-[28px] md:border md:px-5 md:py-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by shade, brand, finish, notes..."
+                className="h-12 w-full rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm sm:h-14"
+              />
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <Button
+                variant={quickTab === "all" ? "default" : "outline"}
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "all"
+                  ? "bg-zinc-950 text-white"
+                  : "border-rose-100 bg-white/80 text-zinc-700"
+                  }`}
+                onClick={() => setQuickTab("all")}
+              >
+                All
+              </Button>
+
+              <Button
+                variant={quickTab === "owned" ? "default" : "outline"}
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "owned"
+                  ? "bg-zinc-950 text-white"
+                  : "border-rose-100 bg-white/80 text-zinc-700"
+                  }`}
+                onClick={() => setQuickTab("owned")}
+              >
+                Owned
+              </Button>
+
+              <Button
+                variant={quickTab === "shared" ? "default" : "outline"}
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "shared"
+                  ? "bg-zinc-950 text-white"
+                  : "border-rose-100 bg-white/80 text-zinc-700"
+                  }`}
+                onClick={() => setQuickTab("shared")}
+              >
+                Shared
+              </Button>
+
+              <Button
+                variant={quickTab === "trash" ? "default" : "outline"}
+                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "trash"
+                  ? "bg-zinc-950 text-white"
+                  : "border-rose-100 bg-white/80 text-zinc-700"
+                  }`}
+                onClick={() => setQuickTab("trash")}
+              >
+                Trash
+              </Button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <Button
+                variant="outline"
+                className={`h-9 shrink-0 rounded-xl px-3 text-sm ${isFiltersOpen
+                  ? "border-rose-300 bg-rose-50 text-rose-700"
+                  : "border-rose-100 bg-white/90 text-zinc-700"
+                  }`}
+                onClick={() => setIsFiltersOpen((prev) => !prev)}
+              >
+                <Funnel className="mr-2 h-4 w-4" />
+                Filters
+                {isFiltersOpen ? (
+                  <ChevronUp className="ml-2 h-4 w-4" />
+                ) : (
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                )}
+              </Button>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  variant="ghost"
+                  className="h-9 shrink-0 rounded-xl px-3 text-sm text-zinc-600 hover:bg-rose-50"
+                  onClick={() => void handleRefreshView()}
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  className="h-9 shrink-0 rounded-xl px-3 text-sm text-zinc-600 hover:bg-rose-50"
+                  onClick={exportVisibleItemsToCsv}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export
+                </Button>
+              </div>
+            </div>
+
+            {activeFilterChips.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {activeFilterChips.map((chip) => (
+                  <button
+                    key={chip.key}
+                    type="button"
+                    onClick={() => {
+                      if (chip.key === "type") setTypeFilter("all");
+                      if (chip.key === "finish") setFinishFilter("all");
+                      if (chip.key === "undertone") setUndertoneFilter("all");
+                      if (chip.key === "colorFamily") setColorFamilyFilter("all");
+                      if (chip.key === "priceTier") setPriceTierFilter("all");
+                      if (chip.key === "status") setStatusFilter("all");
+                      if (chip.key === "ownership") setOwnershipFilter("all");
+                      if (chip.key === "favorites") setFavoritesFilter("all");
+                    }}
+                    className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 hover:bg-rose-100"
+                  >
+                    {chip.label}
+                    <X className="h-3 w-3" />
+                  </button>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => clearFilters()}
+                  className="text-sm text-zinc-500 hover:text-zinc-700"
+                >
+                  Clear all
+                </button>
+              </div>
+            ) : null}
+          </div>
+        )}
+
+        {mainTab === "collection" && (
+          <PullToRefresh onRefresh={handlePullRefresh} disabled={loading}>
           <div className="space-y-4">
             {loading ? (
               <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
@@ -3051,6 +3055,29 @@ export default function LipstickCatalogApp() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25, delay: index * 0.03 }}
                   >
+                    <SwipeableCard
+                      rightLabel={isDeleted ? "Restore" : "Favorite"}
+                      leftLabel={isDeleted ? "" : !isOwnedByYou ? "Remove" : "Edit"}
+                      leftIcon={!isOwnedByYou ? "trash" : "edit"}
+                      onSwipeRight={() => {
+                        if (isDeleted) {
+                          void restoreLipstick(item.id);
+                          return;
+                        }
+                        void toggleFavorite(item.id);
+                      }}
+                      onSwipeLeft={
+                        isDeleted
+                          ? undefined
+                          : () => {
+                              if (!isOwnedByYou) {
+                                void removeSharedLipstick(item.id);
+                                return;
+                              }
+                              startEditLipstick(item);
+                            }
+                      }
+                    >
                     <Card
                       className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
                     >
@@ -3384,12 +3411,14 @@ export default function LipstickCatalogApp() {
                         </AnimatePresence>
                       </CardContent>
                     </Card>
+                    </SwipeableCard>
                   </motion.div>
                 );
 
               })
             )}
           </div>
+          </PullToRefresh>
         )}
       </div>
 
@@ -3459,6 +3488,22 @@ export default function LipstickCatalogApp() {
             </div>
           </div>
         </div>
+      )}
+
+      {mainTab === "collection" && (
+        <Button
+          onClick={startAddLipstick}
+          className="fixed right-4 z-40 h-14 w-14 rounded-full bg-zinc-950 p-0 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] hover:bg-zinc-800 lg:hidden"
+          style={{
+            bottom:
+              compareIds.length > 0
+                ? "calc(6rem + env(safe-area-inset-bottom, 0px))"
+                : "calc(1.5rem + env(safe-area-inset-bottom, 0px))",
+          }}
+          aria-label="Add lipstick"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       )}
 
       {compareIds.length > 0 && (
