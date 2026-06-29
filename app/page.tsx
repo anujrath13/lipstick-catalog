@@ -98,9 +98,6 @@ type LipstickFormValues = {
   priceTier: string;
 };
 
-const INACTIVITY_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
-const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 30 day
-const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = "lipstick_remember_me";
 const LAST_EMAIL_KEY = "lipstick_last_email";
 
@@ -232,7 +229,7 @@ export default function LipstickCatalogApp() {
   const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
   const [pendingSave, setPendingSave] = useState<(() => Promise<void>) | null>(null);
 
-  const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -562,8 +559,12 @@ export default function LipstickCatalogApp() {
   }, []);
 
   useEffect(() => {
+    const rememberMeSaved = localStorage.getItem(REMEMBER_ME_KEY) === "true";
     const savedEmail = localStorage.getItem(LAST_EMAIL_KEY);
-    if (savedEmail) {
+
+    setRememberMe(rememberMeSaved);
+
+    if (rememberMeSaved && savedEmail) {
       setEmail(savedEmail);
     }
   }, []);
@@ -601,142 +602,6 @@ export default function LipstickCatalogApp() {
       setShareRows([]);
       setLoading(false);
     }
-  }, [session]);
-
-  useEffect(() => {
-    if (!session) {
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-        inactivityTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    const updateLastActivity = () => {
-      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
-    };
-
-    const checkInactivity = async () => {
-      const rememberMeEnabled = localStorage.getItem(REMEMBER_ME_KEY) === "true";
-      const timeoutMs = rememberMeEnabled
-        ? REMEMBER_ME_TIMEOUT_MS
-        : INACTIVITY_TIMEOUT_MS;
-
-      const lastActivityRaw = localStorage.getItem(LAST_ACTIVITY_KEY);
-
-      if (!lastActivityRaw) {
-        const now = Date.now();
-        localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
-
-        if (inactivityTimeoutRef.current) {
-          clearTimeout(inactivityTimeoutRef.current);
-        }
-
-        inactivityTimeoutRef.current = setTimeout(async () => {
-          await supabase.auth.signOut();
-          localStorage.removeItem(LAST_ACTIVITY_KEY);
-          setAuthMessage(
-            rememberMeEnabled
-              ? "You were logged out after 30 days of inactivity."
-              : "You were logged out after 20 minutes of inactivity."
-          );
-        }, timeoutMs);
-
-        return;
-      }
-
-      const lastActivity = Number(lastActivityRaw);
-      const now = Date.now();
-
-      if (Number.isNaN(lastActivity)) {
-        localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
-        return;
-      }
-
-      if (now - lastActivity >= timeoutMs) {
-        if (inactivityTimeoutRef.current) {
-          clearTimeout(inactivityTimeoutRef.current);
-          inactivityTimeoutRef.current = null;
-        }
-
-        await supabase.auth.signOut();
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
-
-        setAuthMessage(
-          rememberMeEnabled
-            ? "You were logged out after 30 days of inactivity."
-            : "You were logged out after 30 days of inactivity."
-        );
-        return;
-      }
-
-      const remainingTime = timeoutMs - (now - lastActivity);
-
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-      }
-
-      inactivityTimeoutRef.current = setTimeout(async () => {
-        await supabase.auth.signOut();
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
-        setAuthMessage(
-          rememberMeEnabled
-            ? "You were logged out after 30 days of inactivity."
-            : "You were logged out after 30 days of inactivity."
-        );
-      }, remainingTime);
-    };
-
-    const handleActivity = () => {
-      updateLastActivity();
-      void checkInactivity();
-    };
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void checkInactivity();
-      }
-    };
-
-    const handleWindowFocus = () => {
-      void checkInactivity();
-    };
-
-    const activityEvents: Array<keyof WindowEventMap> = [
-      "mousemove",
-      "mousedown",
-      "keydown",
-      "scroll",
-      "touchstart",
-      "click",
-    ];
-
-    if (!localStorage.getItem(LAST_ACTIVITY_KEY)) {
-      updateLastActivity();
-    }
-
-    activityEvents.forEach((eventName) => {
-      window.addEventListener(eventName, handleActivity, { passive: true });
-    });
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("focus", handleWindowFocus);
-
-    void checkInactivity();
-
-    return () => {
-      if (inactivityTimeoutRef.current) {
-        clearTimeout(inactivityTimeoutRef.current);
-        inactivityTimeoutRef.current = null;
-      }
-
-      activityEvents.forEach((eventName) => {
-        window.removeEventListener(eventName, handleActivity);
-      });
-
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("focus", handleWindowFocus);
-    };
   }, [session]);
 
   const toggleExpanded = (id: number) => {
@@ -1060,10 +925,6 @@ export default function LipstickCatalogApp() {
 
       if (data.user) {
         await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
-
-        // Reset any old inactivity timestamp
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
-        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       }
 
       localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
@@ -1078,7 +939,6 @@ export default function LipstickCatalogApp() {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
 
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -1087,16 +947,19 @@ export default function LipstickCatalogApp() {
     });
 
     if (error) {
-      localStorage.removeItem(LAST_ACTIVITY_KEY);
       setAuthMessage(error.message);
       return;
     }
 
     if (data.user) {
       await ensureProfileRow(data.user.id, data.user.email ?? normalizedEmail);
-      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
-      localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
+
+      if (rememberMe) {
+        localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
+      } else {
+        localStorage.removeItem(LAST_EMAIL_KEY);
+      }
 
       setEmail(normalizedEmail);
       setPassword("");
@@ -1110,12 +973,6 @@ export default function LipstickCatalogApp() {
   }
 
   async function handleSignOut() {
-    if (inactivityTimeoutRef.current) {
-      clearTimeout(inactivityTimeoutRef.current);
-      inactivityTimeoutRef.current = null;
-    }
-
-    localStorage.removeItem(LAST_ACTIVITY_KEY);
     localStorage.removeItem(REMEMBER_ME_KEY);
     await supabase.auth.signOut();
   }
@@ -1929,7 +1786,7 @@ export default function LipstickCatalogApp() {
                   {authMode === "signin" ? (
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-zinc-600">
-                        {rememberMe ? "Remembered ✓" : "Remember me for 30 day"}
+                        {rememberMe ? "Remembered ✓" : "Remember my email"}
                       </span>
 
                       <button
