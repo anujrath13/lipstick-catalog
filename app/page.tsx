@@ -102,6 +102,7 @@ const INACTIVITY_TIMEOUT_MS = 20 * 60 * 1000;
 const REMEMBER_ME_TIMEOUT_MS = 720 * 60 * 60 * 1000; // 30 day
 // setTimeout delay is a 32-bit signed int; longer values overflow and fire immediately.
 const MAX_SET_TIMEOUT_MS = 2_147_483_647;
+const LOGIN_SIGNOUT_GRACE_MS = 60_000;
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = REMEMBER_ME_STORAGE_KEY;
 const LAST_EMAIL_KEY = "lipstick_last_email";
@@ -237,6 +238,8 @@ export default function LipstickCatalogApp() {
   const inactivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inactivityCheckRef = useRef(0);
   const skipInactivityExpiryOnceRef = useRef(false);
+  const loginAtRef = useRef(0);
+  const inactivityStartDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noticeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -586,9 +589,20 @@ export default function LipstickCatalogApp() {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
-      if (event === "SIGNED_IN") {
+      if (event === "SIGNED_IN" && newSession) {
+        loginAtRef.current = Date.now();
         skipInactivityExpiryOnceRef.current = true;
         localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+        setSession(newSession);
+        setAuthLoading(false);
+        return;
+      }
+
+      if (
+        event === "SIGNED_OUT" &&
+        Date.now() - loginAtRef.current < LOGIN_SIGNOUT_GRACE_MS
+      ) {
+        return;
       }
 
       setSession(newSession);
@@ -631,6 +645,9 @@ export default function LipstickCatalogApp() {
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
     };
 
+    const isWithinLoginGrace = () =>
+      Date.now() - loginAtRef.current < LOGIN_SIGNOUT_GRACE_MS;
+
     const scheduleInactivitySignOut = (delayMs: number, checkId: number) => {
       if (inactivityTimeoutRef.current) {
         clearTimeout(inactivityTimeoutRef.current);
@@ -640,6 +657,13 @@ export default function LipstickCatalogApp() {
 
       inactivityTimeoutRef.current = setTimeout(async () => {
         if (checkId !== inactivityCheckRef.current) return;
+        if (isWithinLoginGrace()) {
+          scheduleInactivitySignOut(
+            loginAtRef.current + LOGIN_SIGNOUT_GRACE_MS - Date.now(),
+            checkId
+          );
+          return;
+        }
 
         const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) ?? 0);
         const elapsed = Date.now() - lastActivity;
@@ -664,10 +688,10 @@ export default function LipstickCatalogApp() {
       }, safeDelay);
     };
 
-    const checkIdleExpiry = async () => {
+    const checkIdleExpiry = () => {
       const checkId = inactivityCheckRef.current;
 
-      if (skipInactivityExpiryOnceRef.current) {
+      if (isWithinLoginGrace() || skipInactivityExpiryOnceRef.current) {
         skipInactivityExpiryOnceRef.current = false;
         updateLastActivity();
         scheduleInactivitySignOut(timeoutMs, checkId);
@@ -677,38 +701,24 @@ export default function LipstickCatalogApp() {
       const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) ?? 0);
       const elapsed = Date.now() - lastActivity;
 
-      if (lastActivity > 0 && elapsed >= timeoutMs) {
-        if (checkId !== inactivityCheckRef.current) return;
-        await supabase.auth.signOut();
-        if (checkId !== inactivityCheckRef.current) return;
-        localStorage.removeItem(LAST_ACTIVITY_KEY);
-        localStorage.removeItem(REMEMBER_ME_KEY);
-        setAuthMessage(
-          rememberMeEnabled
-            ? "You were logged out after 30 days of inactivity."
-            : "You were logged out after 20 minutes of inactivity."
-        );
+      if (lastActivity <= 0 || Number.isNaN(lastActivity)) {
+        updateLastActivity();
+        scheduleInactivitySignOut(timeoutMs, checkId);
         return;
       }
 
-      if (lastActivity <= 0 || Number.isNaN(lastActivity)) {
-        updateLastActivity();
-      }
-
-      scheduleInactivitySignOut(
-        lastActivity > 0 ? Math.max(timeoutMs - elapsed, 0) : timeoutMs,
-        checkId
-      );
+      scheduleInactivitySignOut(Math.max(timeoutMs - elapsed, 0), checkId);
     };
 
     const handleActivity = () => {
+      if (isWithinLoginGrace()) return;
       updateLastActivity();
       scheduleInactivitySignOut(timeoutMs, inactivityCheckRef.current);
     };
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        void checkIdleExpiry();
+      if (document.visibilityState === "visible" && !isWithinLoginGrace()) {
+        checkIdleExpiry();
       }
     };
 
@@ -721,7 +731,9 @@ export default function LipstickCatalogApp() {
       "click",
     ];
 
-    void checkIdleExpiry();
+    inactivityStartDelayRef.current = setTimeout(() => {
+      checkIdleExpiry();
+    }, 10_000);
 
     activityEvents.forEach((eventName) => {
       window.addEventListener(eventName, handleActivity, { passive: true });
@@ -730,6 +742,11 @@ export default function LipstickCatalogApp() {
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
+      if (inactivityStartDelayRef.current) {
+        clearTimeout(inactivityStartDelayRef.current);
+        inactivityStartDelayRef.current = null;
+      }
+
       if (inactivityTimeoutRef.current) {
         clearTimeout(inactivityTimeoutRef.current);
         inactivityTimeoutRef.current = null;
@@ -1079,6 +1096,7 @@ export default function LipstickCatalogApp() {
     const normalizedEmail = email.trim().toLowerCase();
 
     localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? "true" : "false");
+    inactivityCheckRef.current += 1;
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email: normalizedEmail,
@@ -1091,8 +1109,8 @@ export default function LipstickCatalogApp() {
     }
 
     if (data.session) {
+      loginAtRef.current = Date.now();
       skipInactivityExpiryOnceRef.current = true;
-      inactivityCheckRef.current += 1;
       localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       localStorage.setItem(LAST_EMAIL_KEY, normalizedEmail);
 
@@ -1106,13 +1124,18 @@ export default function LipstickCatalogApp() {
       setAuthMessage("Signed in.");
       setIsLoginSuccessAnimating(true);
 
-      setTimeout(() => {
+      setTimeout(async () => {
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData.session) {
+          setSession(sessionData.session);
+        }
         setIsLoginSuccessAnimating(false);
       }, 2200);
     }
   }
 
   async function handleSignOut() {
+    loginAtRef.current = 0;
     inactivityCheckRef.current += 1;
 
     if (inactivityTimeoutRef.current) {
@@ -3075,7 +3098,7 @@ export default function LipstickCatalogApp() {
                             </div>
 
                             <p className="text-sm leading-5 text-zinc-500">
-                              {[item.type, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
+                              {[item.colorFamily, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
                             </p>
                           </div>
 
