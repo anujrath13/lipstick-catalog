@@ -4,12 +4,14 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { LibraryDashboard, type CollectionFilter } from "@/components/LibraryDashboard";
+import { CollectionToolbar } from "@/components/CollectionToolbar";
+import { LibraryFiltersPanel } from "@/components/LibraryFiltersPanel";
+import { MobileMenuDrawer } from "@/components/MobileMenuDrawer";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SwipeableCard } from "@/components/SwipeableCard";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { DancingCat } from "@/components/DancingCat";
 import {
-  Search,
   Plus,
   Trash2,
   Package2,
@@ -24,11 +26,8 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Star,
-  Funnel,
-  ArrowUpDown,
   Heart,
   Pencil,
-  Download,
   Camera,
   Loader2,
   Eye,
@@ -36,8 +35,7 @@ import {
   Mail,
   Lock,
   ArrowRight,
-  Rows3,
-  Square,
+  Menu,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { REMEMBER_ME_STORAGE_KEY, supabase } from "@/lib/supabase";
@@ -214,6 +212,7 @@ export default function LipstickCatalogApp() {
   const [ownershipFilter, setOwnershipFilter] = useState("all");
   const [quickTab, setQuickTab] = useState<"all" | "owned" | "shared" | "trash">("all");
   const [cardView, setCardView] = useState<CardViewMode>("comfortable");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [form, setForm] = useState<LipstickFormValues>(emptyForm);
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
@@ -1704,6 +1703,54 @@ export default function LipstickCatalogApp() {
       : null,
   ].filter(Boolean) as { key: string; label: string }[];
 
+  const clearFilterChip = (key: string) => {
+    if (key === "type") setTypeFilter("all");
+    if (key === "finish") setFinishFilter("all");
+    if (key === "undertone") setUndertoneFilter("all");
+    if (key === "colorFamily") setColorFamilyFilter("all");
+    if (key === "priceTier") setPriceTierFilter("all");
+    if (key === "status") setStatusFilter("all");
+    if (key === "ownership") setOwnershipFilter("all");
+    if (key === "favorites") setFavoritesFilter("all");
+  };
+
+  const filterPanelProps = {
+    sortBy,
+    onSortByChange: setSortBy,
+    typeFilter,
+    onTypeFilterChange: setTypeFilter,
+    priceTierFilter,
+    onPriceTierFilterChange: setPriceTierFilter,
+    finishFilter,
+    onFinishFilterChange: setFinishFilter,
+    undertoneFilter,
+    onUndertoneFilterChange: setUndertoneFilter,
+    colorFamilyFilter,
+    onColorFamilyFilterChange: setColorFamilyFilter,
+    statusFilter,
+    onStatusFilterChange: setStatusFilter,
+    ownershipFilter,
+    onOwnershipFilterChange: setOwnershipFilter,
+    favoritesFilter,
+    onFavoritesFilterChange: setFavoritesFilter,
+  };
+
+  const toolbarProps = {
+    query,
+    onQueryChange: setQuery,
+    quickTab,
+    onQuickTabChange: setQuickTab,
+    cardView,
+    onCardViewChange: setCardViewMode,
+    isFiltersOpen,
+    onToggleFilters: () => setIsFiltersOpen((prev) => !prev),
+    onRefresh: () => void handleRefreshView(),
+    onExport: exportVisibleItemsToCsv,
+    activeFilterChips,
+    onClearChip: clearFilterChip,
+    onClearAllFilters: () => clearFilters(),
+  };
+
   const compareItems = items.filter((item) => compareIds.includes(item.id));
   const compareItem1 = compareItems[0] ?? null;
   const compareItem2 = compareItems[1] ?? null;
@@ -2620,89 +2667,143 @@ export default function LipstickCatalogApp() {
           </div>
         ) : null}
 
+        <header className="sticky top-0 z-40 -mx-3 flex items-center gap-2 border-b border-rose-100/50 bg-[#fff9fc]/95 px-3 py-2.5 backdrop-blur-md sm:-mx-4 sm:px-4 md:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 shrink-0 rounded-xl text-zinc-700 hover:bg-rose-50"
+            onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0 flex-1 text-center">
+            <p className="font-heading truncate text-base font-semibold text-zinc-900">
+              My Lipstick Library
+            </p>
+            <p className="truncate text-[11px] text-zinc-500">
+              {mainTab === "collection" ? "Collection" : "Dashboard"}
+            </p>
+          </div>
+          <Button
+            size="icon"
+            className="btn-rose h-10 w-10 shrink-0 rounded-xl"
+            onClick={startAddLipstick}
+            aria-label="Add lipstick"
+          >
+            <Plus className="h-5 w-5" />
+          </Button>
+        </header>
+
+        <MobileMenuDrawer
+          open={isMobileMenuOpen}
+          onClose={() => setIsMobileMenuOpen(false)}
+        >
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-2xl border border-rose-100/60 bg-white shadow-sm">
+              <div className="h-1 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300" />
+              <div className="space-y-3 p-4">
+                <div className="inline-flex items-center gap-2 rounded-full border border-rose-100 bg-rose-50/80 px-3 py-1 text-xs font-medium uppercase tracking-[0.18em] text-rose-500">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Your curated collection
+                </div>
+
+                <div className="flex gap-4 border-b border-rose-100/70">
+                  <button
+                    type="button"
+                    className={`border-b-2 px-1 pb-2 text-sm transition-colors ${mainTab === "collection"
+                      ? "tab-underline-active"
+                      : "border-transparent text-zinc-500"
+                      }`}
+                    onClick={() => {
+                      setMainTab("collection");
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    Collection
+                  </button>
+                  <button
+                    type="button"
+                    className={`border-b-2 px-1 pb-2 text-sm transition-colors ${mainTab === "dashboard"
+                      ? "tab-underline-active"
+                      : "border-transparent text-zinc-500"
+                      }`}
+                    onClick={() => {
+                      setMainTab("dashboard");
+                      setIsMobileMenuOpen(false);
+                    }}
+                  >
+                    Dashboard
+                  </button>
+                </div>
+
+                <p className="text-xs text-zinc-500">
+                  <span className="font-medium text-zinc-700">{totalOwned}</span> owned
+                  <span className="mx-2 text-rose-200">·</span>
+                  <Heart className="mr-0.5 inline h-3 w-3 fill-rose-400 text-rose-400" />
+                  <span className="font-medium text-zinc-700">{totalFavorites}</span> favorites
+                </p>
+
+                <p className="text-xs text-zinc-400">
+                  {session.user.email}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  <Button className="btn-rose rounded-xl" onClick={() => { startAddLipstick(); setIsMobileMenuOpen(false); }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add lipstick
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="rounded-xl border-rose-100/80"
+                    disabled={isScanning}
+                    onClick={() => setIsBarcodeScannerOpen(true)}
+                  >
+                    {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+                    Scan
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="rounded-xl text-zinc-500"
+                    onClick={() => void handleSignOut()}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {mainTab === "collection" ? (
+              <div className="space-y-3">
+                <CollectionToolbar {...toolbarProps} />
+                {isFiltersOpen ? <LibraryFiltersPanel {...filterPanelProps} /> : null}
+                <Button
+                  className="btn-rose w-full rounded-xl"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <Button
+                className="btn-rose w-full rounded-xl"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                View dashboard
+              </Button>
+            )}
+          </div>
+        </MobileMenuDrawer>
+
         <div className="flex flex-col gap-3 md:gap-5">
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="order-2 overflow-hidden rounded-2xl border border-rose-100/40 bg-white/90 shadow-sm md:order-1 md:rounded-[32px] md:border-white/70 md:bg-white/85 md:shadow-[0_20px_80px_rgba(244,114,182,0.10)] md:backdrop-blur-xl"
+          className="order-2 hidden overflow-hidden rounded-2xl border border-rose-100/40 bg-white/90 shadow-sm md:order-1 md:block md:rounded-[32px] md:border-white/70 md:bg-white/85 md:shadow-[0_20px_80px_rgba(244,114,182,0.10)] md:backdrop-blur-xl"
         >
           <div className="h-1 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 md:h-1.5" />
-
-          {/* Mobile: compact header */}
-          <div className="flex flex-col gap-2 p-3 md:hidden">
-            <div className="flex items-center justify-between gap-2">
-              <h1 className="font-heading text-xl font-semibold tracking-tight text-zinc-900">
-                My Lipstick Library
-              </h1>
-              <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  size="icon"
-                  className="btn-rose h-9 w-9 rounded-xl"
-                  onClick={startAddLipstick}
-                  title="Add lipstick"
-                  aria-label="Add lipstick"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-                <Button
-                  size="icon"
-                  variant="outline"
-                  className="h-9 w-9 rounded-xl border-rose-100/80 bg-white/90"
-                  disabled={isScanning}
-                  onClick={() => setIsBarcodeScannerOpen(true)}
-                  title="Scan barcode"
-                  aria-label="Scan barcode"
-                >
-                  {isScanning ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Camera className="h-4 w-4" />
-                  )}
-                </Button>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-9 w-9 rounded-xl text-zinc-500"
-                  onClick={() => void handleSignOut()}
-                  title={`Sign out (${session.user.email})`}
-                  aria-label="Sign out"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 border-b border-rose-100/70">
-              <button
-                type="button"
-                className={`border-b-2 px-1 pb-2 text-sm transition-colors ${mainTab === "collection"
-                  ? "tab-underline-active"
-                  : "border-transparent text-zinc-500"
-                  }`}
-                onClick={() => setMainTab("collection")}
-              >
-                Collection
-              </button>
-              <button
-                type="button"
-                className={`border-b-2 px-1 pb-2 text-sm transition-colors ${mainTab === "dashboard"
-                  ? "tab-underline-active"
-                  : "border-transparent text-zinc-500"
-                  }`}
-                onClick={() => setMainTab("dashboard")}
-              >
-                Dashboard
-              </button>
-            </div>
-
-            <p className="text-xs text-zinc-500">
-              <span className="font-medium text-zinc-700">{totalOwned}</span> owned
-              <span className="mx-2 text-rose-200">·</span>
-              <Heart className="mr-0.5 inline h-3 w-3 fill-rose-400 text-rose-400" />
-              <span className="font-medium text-zinc-700">{totalFavorites}</span> favorites
-            </p>
-          </div>
 
           <div className="hidden flex-col gap-6 p-5 md:flex md:flex-row md:justify-between md:p-7">
             <div className="space-y-4 sm:space-y-5 flex-1 max-w-3xl">
@@ -2830,139 +2931,9 @@ export default function LipstickCatalogApp() {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden border-t border-rose-100/70 bg-rose-50/35 px-5 py-4 md:px-7"
+                className="overflow-hidden border-t border-rose-100/70 px-5 py-4 md:px-7"
               >
-                <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div className="flex items-center gap-2">
-                    <Funnel className="h-4 w-4 text-zinc-500" />
-                    <p className="text-sm font-medium text-zinc-700">Refine your library</p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <ArrowUpDown className="h-4 w-4 text-zinc-500" />
-                    <Select value={sortBy} onValueChange={setSortBy}>
-                      <SelectTrigger className="w-[180px] rounded-2xl border-rose-100 bg-white">
-                        <SelectValue placeholder="Sort by" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="newest">Newest first</SelectItem>
-                        <SelectItem value="oldest">Oldest first</SelectItem>
-                        <SelectItem value="brand-az">Brand A-Z</SelectItem>
-                        <SelectItem value="brand-za">Brand Z-A</SelectItem>
-                        <SelectItem value="shade-az">Shade A-Z</SelectItem>
-                        <SelectItem value="favorites-first">Favorites first</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
-                      <SelectItem value="Bullet">Bullet</SelectItem>
-                      <SelectItem value="Liquid">Liquid</SelectItem>
-                      <SelectItem value="Tint">Tint</SelectItem>
-                      <SelectItem value="Gloss">Gloss</SelectItem>
-                      <SelectItem value="Balm">Balm</SelectItem>
-                      <SelectItem value="Gloss Balm">Gloss Balm</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={priceTierFilter} onValueChange={setPriceTierFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Price tier" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All price tiers</SelectItem>
-                      <SelectItem value="Drugstore">Drugstore</SelectItem>
-                      <SelectItem value="High-End">High-End</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={finishFilter} onValueChange={setFinishFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Finish" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All finishes</SelectItem>
-                      <SelectItem value="Matte">Matte</SelectItem>
-                      <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
-                      <SelectItem value="Soft Matte">Soft Matte</SelectItem>
-                      <SelectItem value="Satin">Satin</SelectItem>
-                      <SelectItem value="Glossy">Glossy</SelectItem>
-                      <SelectItem value="Sheer">Sheer</SelectItem>
-                      <SelectItem value="Tint">Tint</SelectItem>
-                      <SelectItem value="Shimmer">Shimmer</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={undertoneFilter} onValueChange={setUndertoneFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Undertone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All undertones</SelectItem>
-                      <SelectItem value="Warm">Warm</SelectItem>
-                      <SelectItem value="Cool">Cool</SelectItem>
-                      <SelectItem value="Neutral">Neutral</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={colorFamilyFilter} onValueChange={setColorFamilyFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Color family" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All color families</SelectItem>
-                      <SelectItem value="Red">Red</SelectItem>
-                      <SelectItem value="Pink">Pink</SelectItem>
-                      <SelectItem value="Berry">Berry</SelectItem>
-                      <SelectItem value="Brown">Brown</SelectItem>
-                      <SelectItem value="Nude">Nude</SelectItem>
-                      <SelectItem value="Coral">Coral</SelectItem>
-                      <SelectItem value="Mauve">Mauve</SelectItem>
-                      <SelectItem value="Pinkish Brownish">Pinkish Brownish</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="Owned">Owned</SelectItem>
-                      <SelectItem value="Wishlist">Wishlist</SelectItem>
-                      <SelectItem value="Decluttered">Decluttered</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={ownershipFilter} onValueChange={setOwnershipFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Ownership" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All lipsticks</SelectItem>
-                      <SelectItem value="owned">Owned by you</SelectItem>
-                      <SelectItem value="shared">Shared with you</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={favoritesFilter} onValueChange={setFavoritesFilter}>
-                    <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
-                      <SelectValue placeholder="Favorites" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All favorites</SelectItem>
-                      <SelectItem value="favorites">Favorites only</SelectItem>
-                      <SelectItem value="nonfavorites">Non-favorites</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <LibraryFiltersPanel {...filterPanelProps} className="bg-transparent p-0" />
               </motion.div>
             ) : null}
           </AnimatePresence>
@@ -2970,143 +2941,9 @@ export default function LipstickCatalogApp() {
 
         {mainTab === "collection" && (
           <div
-            ref={collectionSearchRef}
-            className="order-1 sticky top-0 z-30 -mx-3 space-y-3 bg-[#fff9fc]/92 px-3 py-2.5 backdrop-blur-md md:order-2 md:-mx-4 md:space-y-4 md:px-4 md:py-3 lg:mx-0 lg:rounded-[28px] lg:bg-[#fff9fc]/95 lg:px-5 lg:py-4"
+            className="order-1 sticky top-0 z-30 hidden -mx-3 bg-[#fff9fc]/92 px-3 py-2.5 backdrop-blur-md md:order-2 md:block md:-mx-4 md:px-4 md:py-3 lg:mx-0 lg:rounded-[28px] lg:bg-[#fff9fc]/95 lg:px-5 lg:py-4"
           >
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
-              <Input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search shades, brands, notes..."
-                className="h-11 w-full rounded-2xl border-rose-100/60 bg-white/90 pl-12 text-base shadow-sm md:h-12"
-              />
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex gap-4 overflow-x-auto border-b border-rose-100/60 pb-0.5 no-scrollbar">
-                {(
-                  [
-                    ["all", "All"],
-                    ["owned", "Owned"],
-                    ["shared", "Shared"],
-                    ["trash", "Trash"],
-                  ] as const
-                ).map(([tab, label]) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={`shrink-0 border-b-2 px-0.5 pb-2 text-sm transition-colors ${quickTab === tab
-                      ? "tab-underline-active"
-                      : "border-transparent text-zinc-500"
-                      }`}
-                    onClick={() => setQuickTab(tab)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex shrink-0 items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={`h-9 w-9 rounded-xl ${isFiltersOpen
-                    ? "bg-rose-50 text-rose-600"
-                    : "text-zinc-600 hover:bg-rose-50"
-                    }`}
-                  onClick={() => setIsFiltersOpen((prev) => !prev)}
-                  title="Filters"
-                  aria-label="Filters"
-                >
-                  <Funnel className="h-4 w-4" />
-                </Button>
-
-                <div className="flex rounded-xl bg-rose-50/50 p-0.5">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 rounded-lg ${cardView === "compact"
-                      ? "bg-white text-rose-600 shadow-sm"
-                      : "text-zinc-500 hover:bg-white/80"
-                      }`}
-                    onClick={() => setCardViewMode("compact")}
-                    title="Compact view"
-                    aria-label="Compact view"
-                  >
-                    <Rows3 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className={`h-8 w-8 rounded-lg ${cardView === "comfortable"
-                      ? "bg-white text-rose-600 shadow-sm"
-                      : "text-zinc-500 hover:bg-white/80"
-                      }`}
-                    onClick={() => setCardViewMode("comfortable")}
-                    title="Comfortable view"
-                    aria-label="Comfortable view"
-                  >
-                    <Square className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-xl text-zinc-600 hover:bg-rose-50"
-                  onClick={() => void handleRefreshView()}
-                  title="Refresh"
-                  aria-label="Refresh"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 rounded-xl text-zinc-600 hover:bg-rose-50"
-                  onClick={exportVisibleItemsToCsv}
-                  title="Export"
-                  aria-label="Export"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {activeFilterChips.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {activeFilterChips.map((chip) => (
-                  <button
-                    key={chip.key}
-                    type="button"
-                    onClick={() => {
-                      if (chip.key === "type") setTypeFilter("all");
-                      if (chip.key === "finish") setFinishFilter("all");
-                      if (chip.key === "undertone") setUndertoneFilter("all");
-                      if (chip.key === "colorFamily") setColorFamilyFilter("all");
-                      if (chip.key === "priceTier") setPriceTierFilter("all");
-                      if (chip.key === "status") setStatusFilter("all");
-                      if (chip.key === "ownership") setOwnershipFilter("all");
-                      if (chip.key === "favorites") setFavoritesFilter("all");
-                    }}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs text-rose-700 hover:bg-rose-100"
-                  >
-                    {chip.label}
-                    <X className="h-3 w-3" />
-                  </button>
-                ))}
-
-                <button
-                  type="button"
-                  onClick={() => clearFilters()}
-                  className="text-xs text-zinc-500 hover:text-zinc-700"
-                >
-                  Clear all
-                </button>
-              </div>
-            ) : null}
+            <CollectionToolbar ref={collectionSearchRef} {...toolbarProps} />
           </div>
         )}
 
