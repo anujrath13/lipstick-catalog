@@ -3120,17 +3120,29 @@ export default function LipstickCatalogApp() {
                             <p className="truncate text-[13px] font-medium leading-snug text-zinc-900">
                               {item.shade || "Untitled shade"}
                             </p>
-                            <p className="flex items-center gap-1 truncate text-[10px] text-zinc-500">
-                              {item.colorFamily ? (
-                                <span
-                                  className={`inline-block h-2 w-2 shrink-0 rounded-full ${colorData.dot}`}
-                                  aria-hidden
-                                />
-                              ) : null}
-                              <span className="truncate">
-                                {[item.colorFamily, item.finish, item.undertone].filter(Boolean).join(" · ") || "—"}
+                            <div className="flex min-w-0 items-center gap-1 text-[10px] text-zinc-500">
+                              <span className="inline-flex min-w-0 flex-1 items-center gap-1">
+                                {item.colorFamily ? (
+                                  <>
+                                    <span
+                                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${colorData.dot}`}
+                                      aria-hidden
+                                    />
+                                    <span className="truncate">{item.colorFamily}</span>
+                                  </>
+                                ) : (
+                                  <span className="truncate text-zinc-400">—</span>
+                                )}
                               </span>
-                            </p>
+                              <span className="shrink-0 text-zinc-300">·</span>
+                              <span className="min-w-0 flex-1 truncate">
+                                {item.finish || "—"}
+                              </span>
+                              <span className="shrink-0 text-zinc-300">·</span>
+                              <span className="min-w-0 flex-1 truncate">
+                                {item.undertone || "—"}
+                              </span>
+                            </div>
                           </div>
                         ) : (
                         <div
