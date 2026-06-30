@@ -36,6 +36,7 @@ import {
   Lock,
   ArrowRight,
   Menu,
+  Search,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { REMEMBER_ME_STORAGE_KEY, supabase } from "@/lib/supabase";
@@ -213,6 +214,7 @@ export default function LipstickCatalogApp() {
   const [quickTab, setQuickTab] = useState<"all" | "owned" | "shared" | "trash">("all");
   const [cardView, setCardView] = useState<CardViewMode>("comfortable");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const [form, setForm] = useState<LipstickFormValues>(emptyForm);
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
@@ -225,6 +227,14 @@ export default function LipstickCatalogApp() {
       setIsCompareOpen(true);
     }
   }, [compareIds]);
+
+  useEffect(() => {
+    if (!isMobileSearchOpen) return;
+    const frame = window.requestAnimationFrame(() => {
+      mobileSearchInputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isMobileSearchOpen]);
 
   const [isScanning, setIsScanning] = useState(false);
   const [isBarcodeScannerOpen, setIsBarcodeScannerOpen] = useState(false);
@@ -253,6 +263,7 @@ export default function LipstickCatalogApp() {
   const brandInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const collectionSearchRef = useRef<HTMLDivElement | null>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement | null>(null);
 
   const getStoragePathFromPublicUrl = (url: string | null | undefined) => {
     if (!url) return null;
@@ -2677,14 +2688,56 @@ export default function LipstickCatalogApp() {
           >
             <Menu className="h-5 w-5" />
           </Button>
-          <div className="min-w-0 flex-1 text-center">
-            <p className="font-heading truncate text-base font-semibold text-zinc-900">
-              My Lipstick Library
-            </p>
-            <p className="truncate text-[11px] text-zinc-500">
-              {mainTab === "collection" ? "Collection" : "Dashboard"}
-            </p>
-          </div>
+
+          {isMobileSearchOpen ? (
+            <div className="relative min-w-0 flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+              <Input
+                ref={mobileSearchInputRef}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search shades, brands, notes..."
+                className="h-10 w-full rounded-xl border-rose-100/60 bg-white/90 pl-9 pr-9 text-sm shadow-sm"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery("");
+                  setIsMobileSearchOpen(false);
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-zinc-400 hover:bg-rose-50 hover:text-zinc-600"
+                aria-label="Close search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="min-w-0 flex-1 text-center">
+              <p className="font-heading truncate text-base font-semibold text-zinc-900">
+                My Lipstick Library
+              </p>
+              <p className="truncate text-[11px] text-zinc-500">
+                {mainTab === "collection" ? "Collection" : "Dashboard"}
+              </p>
+            </div>
+          )}
+
+          {!isMobileSearchOpen ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-10 w-10 shrink-0 rounded-xl hover:bg-rose-50 ${query ? "bg-rose-50 text-rose-600" : "text-zinc-700"
+                }`}
+              onClick={() => {
+                setMainTab("collection");
+                setIsMobileSearchOpen(true);
+              }}
+              aria-label="Search collection"
+            >
+              <Search className="h-5 w-5" />
+            </Button>
+          ) : null}
+
           <Button
             size="icon"
             className="btn-rose h-10 w-10 shrink-0 rounded-xl"
