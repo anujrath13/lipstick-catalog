@@ -130,7 +130,7 @@
 }
 
 html {
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: contain;
 }
 
 @layer utilities {
