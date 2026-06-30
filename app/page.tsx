@@ -34,6 +34,8 @@ import {
   Mail,
   Lock,
   ArrowRight,
+  Rows3,
+  Square,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 import { REMEMBER_ME_STORAGE_KEY, supabase } from "@/lib/supabase";
@@ -108,6 +110,9 @@ const LOGIN_SIGNOUT_GRACE_MS = 60_000;
 const LAST_ACTIVITY_KEY = "lipstick_last_activity_at";
 const REMEMBER_ME_KEY = REMEMBER_ME_STORAGE_KEY;
 const LAST_EMAIL_KEY = "lipstick_last_email";
+const CARD_VIEW_KEY = "lipstick_card_view";
+
+type CardViewMode = "compact" | "comfortable";
 
 const todayString = () => new Date().toISOString().split("T")[0];
 
@@ -206,6 +211,7 @@ export default function LipstickCatalogApp() {
   const [sortBy, setSortBy] = useState("newest");
   const [ownershipFilter, setOwnershipFilter] = useState("all");
   const [quickTab, setQuickTab] = useState<"all" | "owned" | "shared" | "trash">("all");
+  const [cardView, setCardView] = useState<CardViewMode>("comfortable");
 
   const [form, setForm] = useState<LipstickFormValues>(emptyForm);
   const [editingLipstickId, setEditingLipstickId] = useState<number | null>(null);
@@ -579,6 +585,13 @@ export default function LipstickCatalogApp() {
   }, []);
 
   useEffect(() => {
+    const savedView = localStorage.getItem(CARD_VIEW_KEY);
+    if (savedView === "compact" || savedView === "comfortable") {
+      setCardView(savedView);
+    }
+  }, []);
+
+  useEffect(() => {
     if (isAddFormOpen) {
       const timer = setTimeout(() => {
         brandInputRef.current?.focus();
@@ -879,6 +892,13 @@ export default function LipstickCatalogApp() {
   const handlePullRefresh = async () => {
     await refreshDataOnly();
   };
+
+  const setCardViewMode = (mode: CardViewMode) => {
+    setCardView(mode);
+    localStorage.setItem(CARD_VIEW_KEY, mode);
+  };
+
+  const isCompactView = cardView === "compact";
 
   const exportVisibleItemsToCsv = () => {
     if (visibleItems.length === 0) {
@@ -2950,6 +2970,33 @@ export default function LipstickCatalogApp() {
               </Button>
 
               <div className="flex shrink-0 items-center gap-2">
+                <div className="flex rounded-xl border border-rose-100 bg-white/90 p-1">
+                  <Button
+                    variant="ghost"
+                    className={`h-8 rounded-lg px-2.5 text-xs ${cardView === "compact"
+                      ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
+                      : "text-zinc-600 hover:bg-rose-50"
+                      }`}
+                    onClick={() => setCardViewMode("compact")}
+                    title="Compact view"
+                  >
+                    <Rows3 className="mr-1.5 h-3.5 w-3.5" />
+                    Compact
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className={`h-8 rounded-lg px-2.5 text-xs ${cardView === "comfortable"
+                      ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
+                      : "text-zinc-600 hover:bg-rose-50"
+                      }`}
+                    onClick={() => setCardViewMode("comfortable")}
+                    title="Comfortable view"
+                  >
+                    <Square className="mr-1.5 h-3.5 w-3.5" />
+                    Comfortable
+                  </Button>
+                </div>
+
                 <Button
                   variant="ghost"
                   className="h-9 shrink-0 rounded-xl px-3 text-sm text-zinc-600 hover:bg-rose-50"
@@ -3006,7 +3053,7 @@ export default function LipstickCatalogApp() {
         )}
 
         {mainTab === "collection" && (
-          <div className="space-y-4">
+          <div className={isCompactView ? "space-y-2" : "space-y-4"}>
             {loading ? (
               <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
                 <CardContent className="p-5">Loading...</CardContent>
@@ -3087,30 +3134,51 @@ export default function LipstickCatalogApp() {
                       }
                     >
                     <Card
-                      className={`group overflow-hidden rounded-[30px] border bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)] ${colorData.ring}`}
+                      className={`group overflow-hidden border bg-white/90 backdrop-blur transition duration-300 hover:-translate-y-0.5 ${isCompactView
+                        ? "rounded-[20px] shadow-[0_10px_30px_rgba(15,23,42,0.05)] hover:shadow-[0_14px_40px_rgba(244,114,182,0.10)]"
+                        : "rounded-[30px] shadow-[0_20px_60px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)]"
+                        } ${colorData.ring}`}
                     >
-                      <CardContent className="p-3 sm:p-4">
+                      <CardContent className={isCompactView ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}>
                         <div
-                          className="flex cursor-pointer flex-col gap-3"
+                          className={`flex cursor-pointer flex-col ${isCompactView ? "gap-2" : "gap-3"}`}
                           onClick={() => toggleExpanded(item.id)}
                         >
-                          <div className="min-w-0 space-y-3">
-                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                          <div className={`flex ${isCompactView ? "flex-row items-start gap-2.5" : "flex-col gap-3"}`}>
+                          {isCompactView && item.image_url_1 ? (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewImageUrl(item.image_url_1);
+                              }}
+                              className="shrink-0 overflow-hidden rounded-xl border border-rose-100 bg-white"
+                            >
+                              <img
+                                src={item.image_url_1}
+                                alt={`${item.brand} ${item.shade}`}
+                                className="h-12 w-12 object-cover sm:h-14 sm:w-14"
+                              />
+                            </button>
+                          ) : null}
+
+                          <div className={`min-w-0 flex-1 ${isCompactView ? "space-y-1.5" : "space-y-3"}`}>
+                            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
                               {item.colorFamily ? (
-                                <Badge className="shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
+                                <Badge className={`shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100 ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}>
                                   {item.colorFamily}
                                 </Badge>
                               ) : null}
 
                               <Badge
                                 variant="outline"
-                                className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
+                                className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)} ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}
                               >
                                 {isOwnedByYou ? "Owned" : "Shared"}
                               </Badge>
 
                               {item.favorite ? (
-                                <Badge variant="outline" className="shrink-0 rounded-full border-rose-200 text-rose-600">
+                                <Badge variant="outline" className={`shrink-0 rounded-full border-rose-200 text-rose-600 ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}>
                                   Favorite
                                 </Badge>
                               ) : null}
@@ -3118,7 +3186,7 @@ export default function LipstickCatalogApp() {
                               {isDeleted ? (
                                 <Badge
                                   variant="outline"
-                                  className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
+                                  className={`shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700 ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}
                                 >
                                   In Trash
                                 </Badge>
@@ -3126,23 +3194,24 @@ export default function LipstickCatalogApp() {
                             </div>
 
                             <div>
-                              <h2 className="text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
+                              <h2 className={`font-semibold leading-tight text-zinc-900 ${isCompactView ? "text-base" : "text-lg sm:text-xl"}`}>
                                 {item.shade}
                               </h2>
-                              <p className="mt-1 text-sm text-zinc-500">{item.brand}</p>
+                              <p className={`text-zinc-500 ${isCompactView ? "text-xs" : "mt-1 text-sm"}`}>{item.brand}</p>
                             </div>
 
-                            <p className="text-sm leading-5 text-zinc-500">
+                            <p className={`leading-5 text-zinc-500 ${isCompactView ? "line-clamp-1 text-xs" : "text-sm"}`}>
                               {[item.colorFamily, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
                             </p>
                           </div>
+                          </div>
 
-                          <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <div className={`flex flex-wrap items-center ${isCompactView ? "gap-1.5" : "gap-2 pt-1"}`}>
                             <Button
                               variant="ghost"
                               size="icon"
                               disabled={isDeleted}
-                              className={`h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
+                              className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${isCompactView ? "h-8 w-8" : "h-9 w-9"} ${item.favorite ? "text-rose-500" : ""
                                 }`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3150,7 +3219,7 @@ export default function LipstickCatalogApp() {
                               }}
                               title="Favorite"
                             >
-                              <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
+                              <Star className={`${isCompactView ? "h-4 w-4" : "h-5 w-5"} ${item.favorite ? "fill-current" : ""}`} />
                             </Button>
 
                             {isOwnedByYou && !isDeleted && (
@@ -3158,40 +3227,40 @@ export default function LipstickCatalogApp() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                  className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900 ${isCompactView ? "h-8 w-8" : "h-9 w-9"}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     startEditLipstick(item);
                                   }}
                                   title="Edit"
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Pencil className={isCompactView ? "h-3.5 w-3.5" : "h-4 w-4"} />
                                 </Button>
 
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                  className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900 ${isCompactView ? "h-8 w-8" : "h-9 w-9"} ${isCompactView ? "hidden sm:inline-flex" : ""}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setShareModalItem(item);
                                   }}
                                   title="Share"
                                 >
-                                  <Share2 className="h-4 w-4" />
+                                  <Share2 className={isCompactView ? "h-3.5 w-3.5" : "h-4 w-4"} />
                                 </Button>
 
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
+                                  className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900 ${isCompactView ? "h-8 w-8" : "h-9 w-9"} ${isCompactView ? "hidden sm:inline-flex" : ""}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void deleteOwnedLipstick(item.id);
                                   }}
                                   title="Move to Trash"
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className={isCompactView ? "h-3.5 w-3.5" : "h-4 w-4"} />
                                 </Button>
                               </>
                             )}
@@ -3199,14 +3268,14 @@ export default function LipstickCatalogApp() {
                             {!isOwnedByYou && !isDeleted ? (
                               <Button
                                 variant="outline"
-                                className="rounded-2xl border-rose-100 bg-white/95"
+                                className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl"}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   void removeSharedLipstick(item.id);
                                 }}
                               >
-                                <X className="mr-2 h-4 w-4" />
-                                Remove
+                                <X className={isCompactView ? "h-3.5 w-3.5" : "mr-2 h-4 w-4"} />
+                                {!isCompactView ? "Remove" : null}
                               </Button>
                             ) : null}
 
@@ -3214,44 +3283,44 @@ export default function LipstickCatalogApp() {
                               <>
                                 <Button
                                   variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/95"
+                                  className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl"}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void restoreLipstick(item.id);
                                   }}
                                 >
-                                  <RotateCcw className="mr-2 h-4 w-4" />
-                                  Restore
+                                  <RotateCcw className={isCompactView ? "h-3.5 w-3.5" : "mr-2 h-4 w-4"} />
+                                  {!isCompactView ? "Restore" : null}
                                 </Button>
 
                                 <Button
                                   variant="outline"
-                                  className="rounded-2xl border-rose-100 bg-white/95"
+                                  className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl"}`}
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void permanentlyDeleteLipstick(item.id);
                                   }}
                                 >
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  Delete Forever
+                                  <Trash2 className={isCompactView ? "h-3.5 w-3.5" : "mr-2 h-4 w-4"} />
+                                  {!isCompactView ? "Delete Forever" : null}
                                 </Button>
                               </>
                             ) : null}
 
                             <Button
                               variant="outline"
-                              className="rounded-2xl border-rose-100 bg-white/95 px-4"
+                              className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl px-4"}`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpanded(item.id);
                               }}
                               title={isExpanded ? "Collapse" : "Expand"}
                             >
-                              {isExpanded ? "Hide details" : "View details"}
+                              {isCompactView ? null : isExpanded ? "Hide details" : "View details"}
                               {isExpanded ? (
-                                <ChevronUp className="ml-2 h-4 w-4" />
+                                <ChevronUp className={`${isCompactView ? "h-3.5 w-3.5" : "ml-2 h-4 w-4"}`} />
                               ) : (
-                                <ChevronDown className="ml-2 h-4 w-4" />
+                                <ChevronDown className={`${isCompactView ? "h-3.5 w-3.5" : "ml-2 h-4 w-4"}`} />
                               )}
                             </Button>
                           </div>
@@ -3265,9 +3334,9 @@ export default function LipstickCatalogApp() {
                               exit={{ opacity: 0, height: 0 }}
                               className="overflow-hidden"
                             >
-                              <div className="mt-6 space-y-5 rounded-[24px] border border-rose-100/70 bg-rose-50/35 p-4 md:p-5">
+                              <div className={`space-y-4 rounded-[24px] border border-rose-100/70 bg-rose-50/35 ${isCompactView ? "mt-3 p-3" : "mt-6 space-y-5 p-4 md:p-5"}`}>
                                 {item.image_url_1 || item.image_url_2 ? (
-                                  <div className="flex flex-wrap gap-3">
+                                  <div className="flex flex-wrap gap-2 sm:gap-3">
                                     {item.image_url_1 ? (
                                       <button
                                         type="button"
@@ -3280,7 +3349,7 @@ export default function LipstickCatalogApp() {
                                         <img
                                           src={item.image_url_1}
                                           alt="Lipstick photo 1"
-                                          className="h-24 w-24 object-cover"
+                                          className={isCompactView ? "h-16 w-16 object-cover sm:h-20 sm:w-20" : "h-24 w-24 object-cover"}
                                         />
                                       </button>
                                     ) : null}
@@ -3297,7 +3366,7 @@ export default function LipstickCatalogApp() {
                                         <img
                                           src={item.image_url_2}
                                           alt="Lipstick photo 2"
-                                          className="h-24 w-24 object-cover"
+                                          className={isCompactView ? "h-16 w-16 object-cover sm:h-20 sm:w-20" : "h-24 w-24 object-cover"}
                                         />
                                       </button>
                                     ) : null}
@@ -3362,7 +3431,7 @@ export default function LipstickCatalogApp() {
                                   ) : null}
                                 </div>
 
-                                <div className="grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                                <div className={`grid gap-2 text-slate-600 sm:grid-cols-2 ${isCompactView ? "text-xs" : "gap-3 text-sm"}`}>
                                   <div className="flex items-center gap-2">
                                     <Sparkles className="h-4 w-4" /> Best for: {item.occasion || "Not added"}
                                   </div>
