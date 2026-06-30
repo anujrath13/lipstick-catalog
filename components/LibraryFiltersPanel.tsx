@@ -52,6 +52,12 @@ export function LibraryFiltersPanel({
   onFavoritesFilterChange,
   className = "",
 }: LibraryFiltersPanelProps) {
+  const selectContentProps = {
+    position: "popper" as const,
+    sideOffset: 4,
+    className: "z-[100]",
+  };
+
   return (
     <div className={`space-y-3 rounded-2xl bg-rose-50/35 p-4 ${className}`}>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -66,7 +72,7 @@ export function LibraryFiltersPanel({
             <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white sm:w-[180px]">
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent {...selectContentProps}>
               <SelectItem value="newest">Newest first</SelectItem>
               <SelectItem value="oldest">Oldest first</SelectItem>
               <SelectItem value="brand-az">Brand A-Z</SelectItem>
@@ -80,10 +86,10 @@ export function LibraryFiltersPanel({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Select value={typeFilter} onValueChange={onTypeFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Type" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All types</SelectItem>
             <SelectItem value="Bullet">Bullet</SelectItem>
             <SelectItem value="Liquid">Liquid</SelectItem>
@@ -95,10 +101,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={priceTierFilter} onValueChange={onPriceTierFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Price tier" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All price tiers</SelectItem>
             <SelectItem value="Drugstore">Drugstore</SelectItem>
             <SelectItem value="High-End">High-End</SelectItem>
@@ -106,10 +112,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={finishFilter} onValueChange={onFinishFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Finish" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All finishes</SelectItem>
             <SelectItem value="Matte">Matte</SelectItem>
             <SelectItem value="Creamy Matte">Creamy Matte</SelectItem>
@@ -123,10 +129,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={undertoneFilter} onValueChange={onUndertoneFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Undertone" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All undertones</SelectItem>
             <SelectItem value="Warm">Warm</SelectItem>
             <SelectItem value="Cool">Cool</SelectItem>
@@ -135,10 +141,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={colorFamilyFilter} onValueChange={onColorFamilyFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Color family" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All color families</SelectItem>
             <SelectItem value="Red">Red</SelectItem>
             <SelectItem value="Pink">Pink</SelectItem>
@@ -152,10 +158,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All statuses</SelectItem>
             <SelectItem value="Owned">Owned</SelectItem>
             <SelectItem value="Wishlist">Wishlist</SelectItem>
@@ -164,10 +170,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={ownershipFilter} onValueChange={onOwnershipFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Ownership" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All lipsticks</SelectItem>
             <SelectItem value="owned">Owned by you</SelectItem>
             <SelectItem value="shared">Shared with you</SelectItem>
@@ -175,10 +181,10 @@ export function LibraryFiltersPanel({
         </Select>
 
         <Select value={favoritesFilter} onValueChange={onFavoritesFilterChange}>
-          <SelectTrigger className="rounded-2xl border-rose-100 bg-white">
+          <SelectTrigger className="w-full rounded-2xl border-rose-100 bg-white">
             <SelectValue placeholder="Favorites" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent {...selectContentProps}>
             <SelectItem value="all">All favorites</SelectItem>
             <SelectItem value="favorites">Favorites only</SelectItem>
             <SelectItem value="nonfavorites">Non-favorites</SelectItem>
