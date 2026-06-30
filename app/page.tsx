@@ -2,8 +2,8 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import BarcodeScanner from "@/components/BarcodeScanner";
+import { LibraryDashboard, type CollectionFilter } from "@/components/LibraryDashboard";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SwipeableCard } from "@/components/SwipeableCard";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -1674,17 +1674,20 @@ export default function LipstickCatalogApp() {
     session,
   ]);
 
-  const colorFamilyData = Object.entries(
-    visibleItems.reduce((acc: Record<string, number>, item: LipstickItem) => {
-      const color = item.colorFamily || "Unknown";
-      acc[color] = (acc[color] || 0) + 1;
-      return acc;
-    }, {})
-  ).map(([name, value]) => ({
-    name,
-    value,
-  }));
-
+  const openCollection = (filter?: CollectionFilter) => {
+    setMainTab("collection");
+    setQuickTab(filter?.quickTab ?? "all");
+    setFavoritesFilter(filter?.favoritesOnly ? "favorites" : "all");
+    setColorFamilyFilter(filter?.colorFamily ?? "all");
+    setFinishFilter(filter?.finish ?? "all");
+    setStatusFilter(filter?.status ?? "all");
+    setTypeFilter("all");
+    setUndertoneFilter("all");
+    setPriceTierFilter("all");
+    setOwnershipFilter("all");
+    setQuery("");
+    setIsFiltersOpen(false);
+  };
 
   const activeFilterChips = [
     typeFilter !== "all" ? { key: "type", label: typeFilter } : null,
@@ -3550,75 +3553,18 @@ export default function LipstickCatalogApp() {
         )}
         </div>
 
-      {mainTab === "dashboard" && (
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Total Lipsticks</p>
-            <p className="text-2xl font-semibold text-zinc-900">{visibleItems.length}</p>
-          </div>
-
-          <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Favorites</p>
-            <p className="text-2xl font-semibold text-zinc-900">
-              {visibleItems.filter((item) => item.favorite).length}
-            </p>
-          </div>
-          <div className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-            <p className="text-sm text-zinc-500">Top Brand</p>
-            <p className="text-2xl font-semibold text-zinc-900">
-              {(() => {
-                const counts: Record<string, number> = {};
-
-                visibleItems.forEach((item) => {
-                  if (!item.brand) return;
-                  counts[item.brand] = (counts[item.brand] || 0) + 1;
-                });
-
-                const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-
-                return top ? `${top[0]} (${top[1]})` : "—";
-              })()}
-            </p>
-          </div>
-          <div className="col-span-full rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-            <p className="mb-4 text-sm text-zinc-500">Color Family Distribution</p>
-
-            <div className="h-64 w-full">
-              <ResponsiveContainer>
-                <PieChart>
-                  <Pie
-                    data={colorFamilyData}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    label
-                  >
-                    {colorFamilyData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={[
-                          "#fda4af", // rose
-                          "#fb7185",
-                          "#f43f5e",
-                          "#e11d48",
-                          "#be123c",
-                          "#9f1239",
-                          "#881337",
-                        ][index % 7]}
-                      />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+      {mainTab === "dashboard" && session?.user?.id && (
+        <LibraryDashboard
+          items={items}
+          userId={session.user.id}
+          colorFamilyMap={colorFamilyMap}
+          loading={loading}
+          onOpenCollection={openCollection}
+          onAddLipstick={startAddLipstick}
+        />
       )}
 
-      {mainTab === "collection" && (
+      {(mainTab === "collection" || mainTab === "dashboard") && (
         <Button
           onClick={startAddLipstick}
           className="fixed right-4 z-40 flex h-14 w-14 rounded-full btn-rose p-0 shadow-[0_16px_40px_rgba(244,114,182,0.35)] lg:hidden"
