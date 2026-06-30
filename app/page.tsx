@@ -230,6 +230,12 @@ export default function LipstickCatalogApp() {
   }, [compareIds]);
 
   useEffect(() => {
+    if (mainTab === "dashboard") {
+      setIsMobileSearchOpen(false);
+    }
+  }, [mainTab]);
+
+  useEffect(() => {
     if (!isMobileSearchOpen) return;
     const frame = window.requestAnimationFrame(() => {
       mobileSearchInputRef.current?.focus();
@@ -2701,7 +2707,7 @@ export default function LipstickCatalogApp() {
             <Menu className="h-5 w-5" />
           </Button>
 
-          {isMobileSearchOpen ? (
+          {mainTab === "collection" && isMobileSearchOpen ? (
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <Input
@@ -2734,16 +2740,13 @@ export default function LipstickCatalogApp() {
             </div>
           )}
 
-          {!isMobileSearchOpen ? (
+          {mainTab === "collection" && !isMobileSearchOpen ? (
             <Button
               variant="ghost"
               size="icon"
               className={`h-10 w-10 shrink-0 rounded-xl hover:bg-rose-50 ${query ? "bg-rose-50 text-rose-600" : "text-zinc-700"
                 }`}
-              onClick={() => {
-                setMainTab("collection");
-                setIsMobileSearchOpen(true);
-              }}
+              onClick={() => setIsMobileSearchOpen(true)}
               aria-label="Search collection"
             >
               <Search className="h-5 w-5" />
