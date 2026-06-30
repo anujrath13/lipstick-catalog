@@ -3120,8 +3120,16 @@ export default function LipstickCatalogApp() {
                             <p className="truncate text-[13px] font-medium leading-snug text-zinc-900">
                               {item.shade || "Untitled shade"}
                             </p>
-                            <p className="truncate text-[10px] text-zinc-500">
-                              {[item.finish, item.undertone].filter(Boolean).join(" · ") || "—"}
+                            <p className="flex items-center gap-1 truncate text-[10px] text-zinc-500">
+                              {item.colorFamily ? (
+                                <span
+                                  className={`inline-block h-2 w-2 shrink-0 rounded-full ${colorData.dot}`}
+                                  aria-hidden
+                                />
+                              ) : null}
+                              <span className="truncate">
+                                {[item.colorFamily, item.finish, item.undertone].filter(Boolean).join(" · ") || "—"}
+                              </span>
                             </p>
                           </div>
                         ) : (
