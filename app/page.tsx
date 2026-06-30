@@ -2709,7 +2709,7 @@ export default function LipstickCatalogApp() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search shades, brands, notes..."
-                className="h-10 w-full rounded-xl border-rose-100/60 bg-white/90 pl-9 pr-9 text-sm shadow-sm"
+                className="h-10 w-full rounded-xl border-rose-100/60 bg-white/90 pl-9 pr-9 text-base shadow-sm"
               />
               <button
                 type="button"
