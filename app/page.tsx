@@ -6,6 +6,8 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import BarcodeScanner from "@/components/BarcodeScanner";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SwipeableCard } from "@/components/SwipeableCard";
+import { FavoriteButton } from "@/components/FavoriteButton";
+import { DancingCat } from "@/components/DancingCat";
 import {
   Search,
   Plus,
@@ -561,7 +563,7 @@ export default function LipstickCatalogApp() {
         image_url_2: "",
       });
 
-      showNotice("success", "Lipstick scanned. Review and save.");
+      showNotice("success", "Nice find — review and save your new shade.");
     } catch (error) {
       console.error(error);
       showNotice("error", "Could not scan this image.");
@@ -825,7 +827,7 @@ export default function LipstickCatalogApp() {
     setQuickTab("all");
 
     if (showToast) {
-      showNotice("success", "Filters cleared.");
+      showNotice("success", "Filters cleared — full collection is back.");
     }
   };
 
@@ -886,7 +888,7 @@ export default function LipstickCatalogApp() {
     resetForm();
     clearFilters(false);
     await refreshDataOnly();
-    showNotice("success", "Library refreshed.");
+    showNotice("success", "Fresh from the vanity — library updated.");
   };
 
   const handlePullRefresh = async () => {
@@ -976,7 +978,7 @@ export default function LipstickCatalogApp() {
     document.body.removeChild(link);
 
     URL.revokeObjectURL(url);
-    showNotice("success", "CSV exported.");
+    showNotice("success", "Exported — your shades are ready to share.");
   };
 
   async function ensureProfileRow(userId: string, userEmail: string | null) {
@@ -1267,7 +1269,7 @@ export default function LipstickCatalogApp() {
           setExpandedItems((prev) =>
             prev.includes(editingLipstickId) ? prev : [editingLipstickId, ...prev]
           );
-          showNotice("success", "Lipstick updated.");
+          showNotice("success", "Shade updated — looking good.");
           return;
         } catch (error) {
           console.error("Error updating lipstick:", error);
@@ -1293,7 +1295,7 @@ export default function LipstickCatalogApp() {
       resetForm();
       setIsAddFormOpen(false);
       await refreshDataOnly();
-      showNotice("success", "Lipstick added.");
+      showNotice("success", "Welcome to the collection — shade saved.");
     } catch (error: unknown) {
       console.error("Error uploading or saving lipstick:", error);
 
@@ -1369,7 +1371,7 @@ export default function LipstickCatalogApp() {
     }
 
     await refreshDataOnly();
-    showNotice("success", "Lipstick moved to Trash.");
+    showNotice("success", "Moved to trash — you have 30 days to restore.");
   };
 
   const restoreLipstick = async (id: number) => {
@@ -1385,7 +1387,7 @@ export default function LipstickCatalogApp() {
     }
 
     await refreshDataOnly();
-    showNotice("success", "Lipstick restored.");
+    showNotice("success", "Back in your collection.");
   };
 
   const permanentlyDeleteLipstick = async (id: number) => {
@@ -1584,6 +1586,10 @@ export default function LipstickCatalogApp() {
 
       showNotice("error", "Could not update favorite.");
       return;
+    }
+
+    if (nextFavorite) {
+      showNotice("success", "Added to your favorites");
     }
   };
 
@@ -1905,7 +1911,7 @@ export default function LipstickCatalogApp() {
                   </div>
 
                   <div>
-                    <h2 className="text-3xl font-semibold tracking-tight text-zinc-900">
+                    <h2 className="font-heading text-3xl font-semibold tracking-tight text-zinc-900">
                       {authMode === "signin" ? "Welcome back" : "Create your account"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-zinc-500">
@@ -2013,7 +2019,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     onClick={handleAuth}
-                    className="h-12 w-full rounded-2xl bg-zinc-950 text-base font-medium text-white transition hover:bg-zinc-800"
+                    className="btn-rose h-12 w-full rounded-2xl text-base font-medium"
                   >
                     {authMode === "signin" ? "Sign In" : "Create Account"}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -2108,9 +2114,9 @@ export default function LipstickCatalogApp() {
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className={`fixed left-1/2 top-4 z-50 w-[92%] max-w-md -translate-x-1/2 rounded-2xl border px-4 py-3 text-sm shadow-lg ${notice.type === "success"
-                ? "border-green-200 bg-white text-green-800"
-                : "border-rose-200 bg-white text-rose-700"
+              className={`fixed left-1/2 top-4 z-50 w-[92%] max-w-md -translate-x-1/2 rounded-2xl px-4 py-3 text-sm shadow-lg backdrop-blur ${notice.type === "success"
+                ? "border border-rose-100/80 bg-white/95 text-rose-800"
+                : "border border-rose-200 bg-white/95 text-rose-700"
                 }`}
             >
               {notice.text}
@@ -2611,15 +2617,91 @@ export default function LipstickCatalogApp() {
           </div>
         ) : null}
 
+        <div className="flex flex-col gap-3 md:gap-5">
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}
-          className="overflow-hidden rounded-[32px] border border-white/70 bg-white/85 shadow-[0_20px_80px_rgba(244,114,182,0.10)] backdrop-blur-xl"
+          className="order-2 overflow-hidden rounded-2xl border border-rose-100/40 bg-white/90 shadow-sm md:order-1 md:rounded-[32px] md:border-white/70 md:bg-white/85 md:shadow-[0_20px_80px_rgba(244,114,182,0.10)] md:backdrop-blur-xl"
         >
-          <div className="h-1.5 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300" />
+          <div className="h-1 bg-gradient-to-r from-rose-300 via-pink-300 to-fuchsia-300 md:h-1.5" />
 
-          <div className="flex flex-col gap-6 p-4 sm:p-5 md:p-7 md:flex-row md:justify-between">
+          {/* Mobile: compact header */}
+          <div className="flex flex-col gap-2 p-3 md:hidden">
+            <div className="flex items-center justify-between gap-2">
+              <h1 className="font-heading text-xl font-semibold tracking-tight text-zinc-900">
+                My Lipstick Library
+              </h1>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  size="icon"
+                  className="btn-rose h-9 w-9 rounded-xl"
+                  onClick={startAddLipstick}
+                  title="Add lipstick"
+                  aria-label="Add lipstick"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  className="h-9 w-9 rounded-xl border-rose-100/80 bg-white/90"
+                  disabled={isScanning}
+                  onClick={() => setIsBarcodeScannerOpen(true)}
+                  title="Scan barcode"
+                  aria-label="Scan barcode"
+                >
+                  {isScanning ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Camera className="h-4 w-4" />
+                  )}
+                </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 rounded-xl text-zinc-500"
+                  onClick={() => void handleSignOut()}
+                  title={`Sign out (${session.user.email})`}
+                  aria-label="Sign out"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 border-b border-rose-100/70">
+              <button
+                type="button"
+                className={`border-b-2 px-1 pb-2 text-sm transition-colors ${mainTab === "collection"
+                  ? "tab-underline-active"
+                  : "border-transparent text-zinc-500"
+                  }`}
+                onClick={() => setMainTab("collection")}
+              >
+                Collection
+              </button>
+              <button
+                type="button"
+                className={`border-b-2 px-1 pb-2 text-sm transition-colors ${mainTab === "dashboard"
+                  ? "tab-underline-active"
+                  : "border-transparent text-zinc-500"
+                  }`}
+                onClick={() => setMainTab("dashboard")}
+              >
+                Dashboard
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-500">
+              <span className="font-medium text-zinc-700">{totalOwned}</span> owned
+              <span className="mx-2 text-rose-200">·</span>
+              <Heart className="mr-0.5 inline h-3 w-3 fill-rose-400 text-rose-400" />
+              <span className="font-medium text-zinc-700">{totalFavorites}</span> favorites
+            </p>
+          </div>
+
+          <div className="hidden flex-col gap-6 p-5 md:flex md:flex-row md:justify-between md:p-7">
             <div className="space-y-4 sm:space-y-5 flex-1 max-w-3xl">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
@@ -2640,35 +2722,34 @@ export default function LipstickCatalogApp() {
                   </div>
 
                   <div>
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold tracking-tight text-zinc-900">
+                    <h1 className="font-heading text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
                       My Lipstick Library
                     </h1>
 
-                    <div className="mt-4 flex rounded-2xl border border-rose-100 bg-white/80 p-1 shadow-sm">
-                      <Button
-                        variant="ghost"
-                        className={`flex-1 rounded-xl text-sm ${mainTab === "collection"
-                          ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
-                          : "text-zinc-600 hover:bg-rose-50"
+                    <div className="mt-4 flex gap-4 border-b border-rose-100/70">
+                      <button
+                        type="button"
+                        className={`border-b-2 px-1 pb-2.5 text-sm transition-colors ${mainTab === "collection"
+                          ? "tab-underline-active"
+                          : "border-transparent text-zinc-500 hover:text-zinc-700"
                           }`}
                         onClick={() => setMainTab("collection")}
                       >
                         Collection
-                      </Button>
-
-                      <Button
-                        variant="ghost"
-                        className={`flex-1 rounded-xl text-sm ${mainTab === "dashboard"
-                          ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
-                          : "text-zinc-600 hover:bg-rose-50"
+                      </button>
+                      <button
+                        type="button"
+                        className={`border-b-2 px-1 pb-2.5 text-sm transition-colors ${mainTab === "dashboard"
+                          ? "tab-underline-active"
+                          : "border-transparent text-zinc-500 hover:text-zinc-700"
                           }`}
                         onClick={() => setMainTab("dashboard")}
                       >
                         Dashboard
-                      </Button>
+                      </button>
                     </div>
 
-                    <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-500 md:text-base">
+                    <p className="mt-3 max-w-2xl text-sm leading-6 text-zinc-500 md:text-base">
                       Organize your shades, surface favorites faster, and enjoy a more
                       editorial, premium view of your collection.
                     </p>
@@ -2681,7 +2762,7 @@ export default function LipstickCatalogApp() {
 
                 <div className="flex flex-row gap-2 flex-wrap">
                   <Button
-                    className="rounded-2xl bg-zinc-950 px-5 text-white hover:bg-zinc-800"
+                    className="btn-rose rounded-2xl px-5"
                     onClick={startAddLipstick}
                   >
                     <Plus className="mr-2 h-4 w-4" />
@@ -2690,7 +2771,7 @@ export default function LipstickCatalogApp() {
 
                   <Button
                     variant="outline"
-                    className="rounded-2xl border-rose-100 bg-white/90"
+                    className="rounded-2xl border-rose-100/80 bg-white/90"
                     disabled={isScanning}
                     onClick={() => setIsBarcodeScannerOpen(true)}
                   >
@@ -2708,35 +2789,29 @@ export default function LipstickCatalogApp() {
             </div>
 
             <div className="space-y-3">
-              {/* Sign out row */}
-              <div className="flex justify-end">
-
-              </div>
-
-              {/* Stats cards */}
-              <div className="flex-shrink-0 pt-6">
-                <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4">
-                  <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
+              <div className="flex-shrink-0 pt-2">
+                <div className="flex gap-4">
+                  <div className="rounded-[26px] bg-gradient-to-br from-white to-rose-50/65 p-4 shadow-sm">
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
                       Owned
                     </p>
-                    <p className="mt-3 text-3xl font-semibold tracking-tight text-zinc-900">
+                    <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-900">
                       {totalOwned}
                     </p>
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-zinc-500">
                       In your collection
                     </p>
                   </div>
 
-                  <div className="rounded-[26px] border border-white/80 bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
+                  <div className="rounded-[26px] bg-gradient-to-br from-white to-pink-50/65 p-4 shadow-sm">
                     <p className="text-xs font-medium uppercase tracking-[0.18em] text-zinc-400">
                       Favorites
                     </p>
-                    <p className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
+                    <p className="mt-2 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-900">
                       <Heart className="h-5 w-5 fill-current text-rose-500" />
                       {totalFavorites}
                     </p>
-                    <p className="mt-2 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-zinc-500">
                       {favoritesPercent}% of active library
                     </p>
                   </div>
@@ -2893,90 +2968,64 @@ export default function LipstickCatalogApp() {
         {mainTab === "collection" && (
           <div
             ref={collectionSearchRef}
-            className="sticky top-0 z-30 -mx-3 space-y-4 border-b border-rose-100/80 bg-[#fff9fc]/95 px-3 py-3 backdrop-blur-md sm:-mx-4 sm:px-4 md:mx-0 md:rounded-[28px] md:border md:px-5 md:py-4"
+            className="order-1 sticky top-0 z-30 -mx-3 space-y-3 bg-[#fff9fc]/92 px-3 py-2.5 backdrop-blur-md md:order-2 md:-mx-4 md:space-y-4 md:px-4 md:py-3 lg:mx-0 lg:rounded-[28px] lg:bg-[#fff9fc]/95 lg:px-5 lg:py-4"
           >
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-400" />
               <Input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by shade, brand, finish, notes..."
-                className="h-12 w-full rounded-2xl border-rose-100 bg-white/90 pl-12 text-base shadow-sm sm:h-14"
+                placeholder="Search shades, brands, notes..."
+                className="h-11 w-full rounded-2xl border-rose-100/60 bg-white/90 pl-12 text-base shadow-sm md:h-12"
               />
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <Button
-                variant={quickTab === "all" ? "default" : "outline"}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "all"
-                  ? "bg-zinc-950 text-white"
-                  : "border-rose-100 bg-white/80 text-zinc-700"
-                  }`}
-                onClick={() => setQuickTab("all")}
-              >
-                All
-              </Button>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex gap-4 overflow-x-auto border-b border-rose-100/60 pb-0.5 no-scrollbar">
+                {(
+                  [
+                    ["all", "All"],
+                    ["owned", "Owned"],
+                    ["shared", "Shared"],
+                    ["trash", "Trash"],
+                  ] as const
+                ).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={`shrink-0 border-b-2 px-0.5 pb-2 text-sm transition-colors ${quickTab === tab
+                      ? "tab-underline-active"
+                      : "border-transparent text-zinc-500"
+                      }`}
+                    onClick={() => setQuickTab(tab)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-              <Button
-                variant={quickTab === "owned" ? "default" : "outline"}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "owned"
-                  ? "bg-zinc-950 text-white"
-                  : "border-rose-100 bg-white/80 text-zinc-700"
-                  }`}
-                onClick={() => setQuickTab("owned")}
-              >
-                Owned
-              </Button>
+              <div className="flex shrink-0 items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`h-9 w-9 rounded-xl ${isFiltersOpen
+                    ? "bg-rose-50 text-rose-600"
+                    : "text-zinc-600 hover:bg-rose-50"
+                    }`}
+                  onClick={() => setIsFiltersOpen((prev) => !prev)}
+                  title="Filters"
+                  aria-label="Filters"
+                >
+                  <Funnel className="h-4 w-4" />
+                </Button>
 
-              <Button
-                variant={quickTab === "shared" ? "default" : "outline"}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "shared"
-                  ? "bg-zinc-950 text-white"
-                  : "border-rose-100 bg-white/80 text-zinc-700"
-                  }`}
-                onClick={() => setQuickTab("shared")}
-              >
-                Shared
-              </Button>
-
-              <Button
-                variant={quickTab === "trash" ? "default" : "outline"}
-                className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm ${quickTab === "trash"
-                  ? "bg-zinc-950 text-white"
-                  : "border-rose-100 bg-white/80 text-zinc-700"
-                  }`}
-                onClick={() => setQuickTab("trash")}
-              >
-                Trash
-              </Button>
-            </div>
-
-            <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 no-scrollbar">
-              <Button
-                variant="outline"
-                className={`h-9 shrink-0 rounded-xl px-3 text-sm ${isFiltersOpen
-                  ? "border-rose-300 bg-rose-50 text-rose-700"
-                  : "border-rose-100 bg-white/90 text-zinc-700"
-                  }`}
-                onClick={() => setIsFiltersOpen((prev) => !prev)}
-              >
-                <Funnel className="mr-2 h-4 w-4" />
-                Filters
-                {isFiltersOpen ? (
-                  <ChevronUp className="ml-2 h-4 w-4" />
-                ) : (
-                  <ChevronDown className="ml-2 h-4 w-4" />
-                )}
-              </Button>
-
-              <div className="flex shrink-0 items-center gap-1.5">
-                <div className="flex rounded-xl border border-rose-100 bg-white/90 p-1">
+                <div className="flex rounded-xl bg-rose-50/50 p-0.5">
                   <Button
                     variant="ghost"
                     size="icon"
                     className={`h-8 w-8 rounded-lg ${cardView === "compact"
-                      ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
-                      : "text-zinc-600 hover:bg-rose-50"
+                      ? "bg-white text-rose-600 shadow-sm"
+                      : "text-zinc-500 hover:bg-white/80"
                       }`}
                     onClick={() => setCardViewMode("compact")}
                     title="Compact view"
@@ -2988,8 +3037,8 @@ export default function LipstickCatalogApp() {
                     variant="ghost"
                     size="icon"
                     className={`h-8 w-8 rounded-lg ${cardView === "comfortable"
-                      ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
-                      : "text-zinc-600 hover:bg-rose-50"
+                      ? "bg-white text-rose-600 shadow-sm"
+                      : "text-zinc-500 hover:bg-white/80"
                       }`}
                     onClick={() => setCardViewMode("comfortable")}
                     title="Comfortable view"
@@ -3002,7 +3051,7 @@ export default function LipstickCatalogApp() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 shrink-0 rounded-xl text-zinc-600 hover:bg-rose-50"
+                  className="h-9 w-9 rounded-xl text-zinc-600 hover:bg-rose-50"
                   onClick={() => void handleRefreshView()}
                   title="Refresh"
                   aria-label="Refresh"
@@ -3013,7 +3062,7 @@ export default function LipstickCatalogApp() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 shrink-0 rounded-xl text-zinc-600 hover:bg-rose-50"
+                  className="h-9 w-9 rounded-xl text-zinc-600 hover:bg-rose-50"
                   onClick={exportVisibleItemsToCsv}
                   title="Export"
                   aria-label="Export"
@@ -3039,7 +3088,7 @@ export default function LipstickCatalogApp() {
                       if (chip.key === "ownership") setOwnershipFilter("all");
                       if (chip.key === "favorites") setFavoritesFilter("all");
                     }}
-                    className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-sm text-rose-700 hover:bg-rose-100"
+                    className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 px-2.5 py-1 text-xs text-rose-700 hover:bg-rose-100"
                   >
                     {chip.label}
                     <X className="h-3 w-3" />
@@ -3049,7 +3098,7 @@ export default function LipstickCatalogApp() {
                 <button
                   type="button"
                   onClick={() => clearFilters()}
-                  className="text-sm text-zinc-500 hover:text-zinc-700"
+                  className="text-xs text-zinc-500 hover:text-zinc-700"
                 >
                   Clear all
                 </button>
@@ -3059,32 +3108,38 @@ export default function LipstickCatalogApp() {
         )}
 
         {mainTab === "collection" && (
-          <div className={isCompactView ? "space-y-1" : "space-y-4"}>
+          <div className={`order-3 ${isCompactView ? "space-y-1" : "space-y-4"}`}>
             {loading ? (
               <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
                 <CardContent className="p-5">Loading...</CardContent>
               </Card>
             ) : visibleItems.length === 0 ? (
-              <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
-                <CardContent className="flex min-h-[280px] flex-col items-center justify-center gap-4 p-6 text-center">
-                  <div className="rounded-full bg-rose-50 p-4">
-                    <Package2 className="h-10 w-10 text-rose-300" />
-                  </div>
+              <Card className="rounded-[28px] border-rose-100/40 bg-white/95 shadow-sm">
+                <CardContent className="flex min-h-[260px] flex-col items-center justify-center gap-4 p-6 text-center">
+                  <DancingCat mode="pull" size={56} />
                   <div>
-                    <h3 className="text-xl font-medium">No lipsticks match this view</h3>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Try changing your filters or add a new shade to your library.
+                    <h3 className="font-heading text-xl font-medium text-zinc-900">
+                      {items.length === 0
+                        ? "Your vanity is waiting"
+                        : "No shades match this view"}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-zinc-500">
+                      {items.length === 0
+                        ? "Add your first lipstick — photos, finishes, favorites, all in one place."
+                        : "Try a different filter or add a new shade to your library."}
                     </p>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2">
-                    <Button
-                      variant="outline"
-                      className="rounded-2xl border-rose-100"
-                      onClick={() => clearFilters()}
-                    >
-                      Clear Filters
-                    </Button>
-                    <Button className="rounded-2xl" onClick={startAddLipstick}>
+                    {items.length > 0 ? (
+                      <Button
+                        variant="outline"
+                        className="rounded-2xl border-rose-100/80"
+                        onClick={() => clearFilters()}
+                      >
+                        Clear filters
+                      </Button>
+                    ) : null}
+                    <Button className="btn-rose rounded-2xl" onClick={startAddLipstick}>
                       <Plus className="mr-2 h-4 w-4" />
                       Add a lipstick
                     </Button>
@@ -3199,7 +3254,7 @@ export default function LipstickCatalogApp() {
                             </div>
 
                             <div>
-                              <h2 className="text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
+                              <h2 className="font-heading text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
                                 {item.shade}
                               </h2>
                               <p className="mt-1 text-sm text-zinc-500">{item.brand}</p>
@@ -3212,20 +3267,11 @@ export default function LipstickCatalogApp() {
                           </div>
 
                           <div className="flex flex-wrap items-center gap-2 pt-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
+                            <FavoriteButton
+                              active={!!item.favorite}
                               disabled={isDeleted}
-                              className={`h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
-                                }`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                void toggleFavorite(item.id);
-                              }}
-                              title="Favorite"
-                            >
-                              <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
-                            </Button>
+                              onToggle={() => void toggleFavorite(item.id)}
+                            />
 
                             {isOwnedByYou && !isDeleted && (
                               <>
@@ -3502,7 +3548,7 @@ export default function LipstickCatalogApp() {
             )}
           </div>
         )}
-      </div>
+        </div>
 
       {mainTab === "dashboard" && (
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -3575,7 +3621,7 @@ export default function LipstickCatalogApp() {
       {mainTab === "collection" && (
         <Button
           onClick={startAddLipstick}
-          className="fixed right-4 z-40 h-14 w-14 rounded-full bg-zinc-950 p-0 text-white shadow-[0_16px_40px_rgba(15,23,42,0.28)] hover:bg-zinc-800 lg:hidden"
+          className="fixed right-4 z-40 hidden h-14 w-14 rounded-full btn-rose p-0 shadow-[0_16px_40px_rgba(244,114,182,0.35)] md:flex lg:hidden"
           style={{
             bottom:
               compareIds.length > 0
@@ -3615,7 +3661,7 @@ export default function LipstickCatalogApp() {
               {/* Compare */}
               {compareIds.length === 2 && (
                 <Button
-                  className="h-8 rounded-xl bg-zinc-900 px-3 text-sm text-white"
+                  className="btn-rose h-8 rounded-xl px-3 text-sm"
                   onClick={() => setIsCompareOpen(true)}
                 >
                   Compare
@@ -3625,6 +3671,7 @@ export default function LipstickCatalogApp() {
           </div>
         </div>
       )}
+      </div>
     </div>
     </PullToRefresh>
   );

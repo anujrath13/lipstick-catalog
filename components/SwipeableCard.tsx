@@ -3,6 +3,7 @@
 import { animate, motion, useMotionValue, useTransform, type PanInfo } from "framer-motion";
 import { Pencil, RotateCcw, Star, Trash2 } from "lucide-react";
 import { useRef, type ReactNode } from "react";
+import { hapticLight, hapticSuccess } from "@/lib/haptics";
 
 type SwipeableCardProps = {
   children: ReactNode;
@@ -40,9 +41,11 @@ export function SwipeableCard({
 
     if (info.offset.x > SWIPE_THRESHOLD) {
       didSwipe.current = true;
+      hapticSuccess();
       onSwipeRight?.();
     } else if (info.offset.x < -SWIPE_THRESHOLD && onSwipeLeft) {
       didSwipe.current = true;
+      hapticLight();
       onSwipeLeft();
     }
 
