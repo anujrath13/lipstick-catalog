@@ -3621,7 +3621,7 @@ export default function LipstickCatalogApp() {
       {mainTab === "collection" && (
         <Button
           onClick={startAddLipstick}
-          className="fixed right-4 z-40 hidden h-14 w-14 rounded-full btn-rose p-0 shadow-[0_16px_40px_rgba(244,114,182,0.35)] md:flex lg:hidden"
+          className="fixed right-4 z-40 flex h-14 w-14 rounded-full btn-rose p-0 shadow-[0_16px_40px_rgba(244,114,182,0.35)] lg:hidden"
           style={{
             bottom:
               compareIds.length > 0
