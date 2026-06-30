@@ -7,6 +7,7 @@ import { LibraryDashboard, type CollectionFilter } from "@/components/LibraryDas
 import { CollectionToolbar } from "@/components/CollectionToolbar";
 import { LibraryFiltersPanel } from "@/components/LibraryFiltersPanel";
 import { MobileMenuDrawer } from "@/components/MobileMenuDrawer";
+import { SwipeBackGesture } from "@/components/SwipeBackGesture";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { SwipeableCard } from "@/components/SwipeableCard";
 import { FavoriteButton } from "@/components/FavoriteButton";
@@ -2112,6 +2113,17 @@ export default function LipstickCatalogApp() {
       disabled={loading}
       scrollAnchorRef={collectionSearchRef}
     >
+    <SwipeBackGesture
+      enabled={
+        mainTab === "collection" &&
+        !isMobileMenuOpen &&
+        !isCompareOpen &&
+        !isAddFormOpen &&
+        !isBarcodeScannerOpen &&
+        !showDuplicateDialog
+      }
+      onBack={() => setMainTab("dashboard")}
+    />
     <div
       className="min-h-screen px-3 py-4 sm:px-4 sm:py-6 md:p-8"
       style={{
