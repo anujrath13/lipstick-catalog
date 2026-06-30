@@ -3053,7 +3053,7 @@ export default function LipstickCatalogApp() {
         )}
 
         {mainTab === "collection" && (
-          <div className={isCompactView ? "space-y-2" : "space-y-4"}>
+          <div className={isCompactView ? "space-y-1" : "space-y-4"}>
             {loading ? (
               <Card className="rounded-[28px] border border-rose-100 bg-white/95 shadow-sm">
                 <CardContent className="p-5">Loading...</CardContent>
@@ -3134,51 +3134,50 @@ export default function LipstickCatalogApp() {
                       }
                     >
                     <Card
-                      className={`group overflow-hidden border bg-white/90 backdrop-blur transition duration-300 hover:-translate-y-0.5 ${isCompactView
-                        ? "rounded-[20px] shadow-[0_10px_30px_rgba(15,23,42,0.05)] hover:shadow-[0_14px_40px_rgba(244,114,182,0.10)]"
-                        : "rounded-[30px] shadow-[0_20px_60px_rgba(15,23,42,0.06)] hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)]"
-                        } ${colorData.ring}`}
+                      className={`group overflow-hidden border bg-white/90 backdrop-blur transition duration-300 ${isCompactView
+                        ? "rounded-xl border-rose-100/80 shadow-none hover:bg-white"
+                        : "rounded-[30px] shadow-[0_20px_60px_rgba(15,23,42,0.06)] hover:-translate-y-0.5 hover:shadow-[0_24px_80px_rgba(244,114,182,0.14)]"
+                        } ${isCompactView ? "" : colorData.ring}`}
                     >
-                      <CardContent className={isCompactView ? "p-2.5 sm:p-3" : "p-3 sm:p-4"}>
+                      <CardContent className={isCompactView ? "px-2.5 py-2" : "p-3 sm:p-4"}>
+                        {isCompactView ? (
+                          <div
+                            className="cursor-pointer space-y-0.5"
+                            onClick={() => toggleExpanded(item.id)}
+                          >
+                            <p className="truncate text-[10px] font-medium uppercase tracking-[0.08em] text-zinc-400">
+                              {item.brand || "Unknown brand"}
+                            </p>
+                            <p className="truncate text-[13px] font-medium leading-snug text-zinc-900">
+                              {item.shade || "Untitled shade"}
+                            </p>
+                            <p className="truncate text-[10px] text-zinc-500">
+                              {[item.finish, item.undertone].filter(Boolean).join(" · ") || "—"}
+                            </p>
+                          </div>
+                        ) : (
                         <div
-                          className={`flex cursor-pointer flex-col ${isCompactView ? "gap-2" : "gap-3"}`}
+                          className="flex cursor-pointer flex-col gap-3"
                           onClick={() => toggleExpanded(item.id)}
                         >
-                          <div className={`flex ${isCompactView ? "flex-row items-start gap-2.5" : "flex-col gap-3"}`}>
-                          {isCompactView && item.image_url_1 ? (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewImageUrl(item.image_url_1);
-                              }}
-                              className="shrink-0 overflow-hidden rounded-xl border border-rose-100 bg-white"
-                            >
-                              <img
-                                src={item.image_url_1}
-                                alt={`${item.brand} ${item.shade}`}
-                                className="h-12 w-12 object-cover sm:h-14 sm:w-14"
-                              />
-                            </button>
-                          ) : null}
-
-                          <div className={`min-w-0 flex-1 ${isCompactView ? "space-y-1.5" : "space-y-3"}`}>
-                            <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
+                          <div className="flex flex-col gap-3">
+                          <div className="min-w-0 space-y-3">
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
                               {item.colorFamily ? (
-                                <Badge className={`shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100 ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}>
+                                <Badge className="shrink-0 rounded-full bg-rose-100 text-rose-700 hover:bg-rose-100">
                                   {item.colorFamily}
                                 </Badge>
                               ) : null}
 
                               <Badge
                                 variant="outline"
-                                className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)} ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}
+                                className={`shrink-0 rounded-full border ${ownershipBadgeClasses(isOwnedByYou)}`}
                               >
                                 {isOwnedByYou ? "Owned" : "Shared"}
                               </Badge>
 
                               {item.favorite ? (
-                                <Badge variant="outline" className={`shrink-0 rounded-full border-rose-200 text-rose-600 ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}>
+                                <Badge variant="outline" className="shrink-0 rounded-full border-rose-200 text-rose-600">
                                   Favorite
                                 </Badge>
                               ) : null}
@@ -3186,7 +3185,7 @@ export default function LipstickCatalogApp() {
                               {isDeleted ? (
                                 <Badge
                                   variant="outline"
-                                  className={`shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700 ${isCompactView ? "px-2 py-0 text-[10px]" : ""}`}
+                                  className="shrink-0 rounded-full border-slate-300 bg-slate-100 text-slate-700"
                                 >
                                   In Trash
                                 </Badge>
@@ -3194,24 +3193,24 @@ export default function LipstickCatalogApp() {
                             </div>
 
                             <div>
-                              <h2 className={`font-semibold leading-tight text-zinc-900 ${isCompactView ? "text-base" : "text-lg sm:text-xl"}`}>
+                              <h2 className="text-lg font-semibold leading-tight text-zinc-900 sm:text-xl">
                                 {item.shade}
                               </h2>
-                              <p className={`text-zinc-500 ${isCompactView ? "text-xs" : "mt-1 text-sm"}`}>{item.brand}</p>
+                              <p className="mt-1 text-sm text-zinc-500">{item.brand}</p>
                             </div>
 
-                            <p className={`leading-5 text-zinc-500 ${isCompactView ? "line-clamp-1 text-xs" : "text-sm"}`}>
+                            <p className="text-sm leading-5 text-zinc-500">
                               {[item.colorFamily, item.finish, item.undertone].filter(Boolean).join(" • ") || "No extra details yet"}
                             </p>
                           </div>
                           </div>
 
-                          <div className={`flex flex-wrap items-center ${isCompactView ? "gap-1.5" : "gap-2 pt-1"}`}>
+                          <div className="flex flex-wrap items-center gap-2 pt-1">
                             <Button
                               variant="ghost"
                               size="icon"
                               disabled={isDeleted}
-                              className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${isCompactView ? "h-8 w-8" : "h-9 w-9"} ${item.favorite ? "text-rose-500" : ""
+                              className={`h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-rose-500 ${item.favorite ? "text-rose-500" : ""
                                 }`}
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -3219,7 +3218,7 @@ export default function LipstickCatalogApp() {
                               }}
                               title="Favorite"
                             >
-                              <Star className={`${isCompactView ? "h-4 w-4" : "h-5 w-5"} ${item.favorite ? "fill-current" : ""}`} />
+                              <Star className={`h-5 w-5 ${item.favorite ? "fill-current" : ""}`} />
                             </Button>
 
                             {isOwnedByYou && !isDeleted && (
@@ -3227,40 +3226,40 @@ export default function LipstickCatalogApp() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900 ${isCompactView ? "h-8 w-8" : "h-9 w-9"}`}
+                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     startEditLipstick(item);
                                   }}
                                   title="Edit"
                                 >
-                                  <Pencil className={isCompactView ? "h-3.5 w-3.5" : "h-4 w-4"} />
+                                  <Pencil className="h-4 w-4" />
                                 </Button>
 
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900 ${isCompactView ? "h-8 w-8" : "h-9 w-9"} ${isCompactView ? "hidden sm:inline-flex" : ""}`}
+                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setShareModalItem(item);
                                   }}
                                   title="Share"
                                 >
-                                  <Share2 className={isCompactView ? "h-3.5 w-3.5" : "h-4 w-4"} />
+                                  <Share2 className="h-4 w-4" />
                                 </Button>
 
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className={`rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900 ${isCompactView ? "h-8 w-8" : "h-9 w-9"} ${isCompactView ? "hidden sm:inline-flex" : ""}`}
+                                  className="h-9 w-9 rounded-full text-zinc-400 hover:bg-rose-50 hover:text-zinc-900"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void deleteOwnedLipstick(item.id);
                                   }}
                                   title="Move to Trash"
                                 >
-                                  <Trash2 className={isCompactView ? "h-3.5 w-3.5" : "h-4 w-4"} />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
                               </>
                             )}
@@ -3268,14 +3267,14 @@ export default function LipstickCatalogApp() {
                             {!isOwnedByYou && !isDeleted ? (
                               <Button
                                 variant="outline"
-                                className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl"}`}
+                                className="rounded-2xl border-rose-100 bg-white/95"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   void removeSharedLipstick(item.id);
                                 }}
                               >
-                                <X className={isCompactView ? "h-3.5 w-3.5" : "mr-2 h-4 w-4"} />
-                                {!isCompactView ? "Remove" : null}
+                                <X className="mr-2 h-4 w-4" />
+                                Remove
                               </Button>
                             ) : null}
 
@@ -3283,48 +3282,49 @@ export default function LipstickCatalogApp() {
                               <>
                                 <Button
                                   variant="outline"
-                                  className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl"}`}
+                                  className="rounded-2xl border-rose-100 bg-white/95"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void restoreLipstick(item.id);
                                   }}
                                 >
-                                  <RotateCcw className={isCompactView ? "h-3.5 w-3.5" : "mr-2 h-4 w-4"} />
-                                  {!isCompactView ? "Restore" : null}
+                                  <RotateCcw className="mr-2 h-4 w-4" />
+                                  Restore
                                 </Button>
 
                                 <Button
                                   variant="outline"
-                                  className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl"}`}
+                                  className="rounded-2xl border-rose-100 bg-white/95"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     void permanentlyDeleteLipstick(item.id);
                                   }}
                                 >
-                                  <Trash2 className={isCompactView ? "h-3.5 w-3.5" : "mr-2 h-4 w-4"} />
-                                  {!isCompactView ? "Delete Forever" : null}
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  Delete Forever
                                 </Button>
                               </>
                             ) : null}
 
                             <Button
                               variant="outline"
-                              className={`border-rose-100 bg-white/95 ${isCompactView ? "h-8 rounded-xl px-2.5 text-xs" : "rounded-2xl px-4"}`}
+                              className="rounded-2xl border-rose-100 bg-white/95 px-4"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleExpanded(item.id);
                               }}
                               title={isExpanded ? "Collapse" : "Expand"}
                             >
-                              {isCompactView ? null : isExpanded ? "Hide details" : "View details"}
+                              {isExpanded ? "Hide details" : "View details"}
                               {isExpanded ? (
-                                <ChevronUp className={`${isCompactView ? "h-3.5 w-3.5" : "ml-2 h-4 w-4"}`} />
+                                <ChevronUp className="ml-2 h-4 w-4" />
                               ) : (
-                                <ChevronDown className={`${isCompactView ? "h-3.5 w-3.5" : "ml-2 h-4 w-4"}`} />
+                                <ChevronDown className="ml-2 h-4 w-4" />
                               )}
                             </Button>
                           </div>
                         </div>
+                        )}
 
                         <AnimatePresence initial={false}>
                           {isExpanded ? (
