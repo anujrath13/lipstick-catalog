@@ -2969,50 +2969,56 @@ export default function LipstickCatalogApp() {
                 )}
               </Button>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex shrink-0 items-center gap-1.5">
                 <div className="flex rounded-xl border border-rose-100 bg-white/90 p-1">
                   <Button
                     variant="ghost"
-                    className={`h-8 rounded-lg px-2.5 text-xs ${cardView === "compact"
+                    size="icon"
+                    className={`h-8 w-8 rounded-lg ${cardView === "compact"
                       ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
                       : "text-zinc-600 hover:bg-rose-50"
                       }`}
                     onClick={() => setCardViewMode("compact")}
                     title="Compact view"
+                    aria-label="Compact view"
                   >
-                    <Rows3 className="mr-1.5 h-3.5 w-3.5" />
-                    Compact
+                    <Rows3 className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="ghost"
-                    className={`h-8 rounded-lg px-2.5 text-xs ${cardView === "comfortable"
+                    size="icon"
+                    className={`h-8 w-8 rounded-lg ${cardView === "comfortable"
                       ? "bg-zinc-950 text-white hover:bg-zinc-950 hover:text-white"
                       : "text-zinc-600 hover:bg-rose-50"
                       }`}
                     onClick={() => setCardViewMode("comfortable")}
                     title="Comfortable view"
+                    aria-label="Comfortable view"
                   >
-                    <Square className="mr-1.5 h-3.5 w-3.5" />
-                    Comfortable
+                    <Square className="h-4 w-4" />
                   </Button>
                 </div>
 
                 <Button
                   variant="ghost"
-                  className="h-9 shrink-0 rounded-xl px-3 text-sm text-zinc-600 hover:bg-rose-50"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 rounded-xl text-zinc-600 hover:bg-rose-50"
                   onClick={() => void handleRefreshView()}
+                  title="Refresh"
+                  aria-label="Refresh"
                 >
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Refresh
+                  <RotateCcw className="h-4 w-4" />
                 </Button>
 
                 <Button
                   variant="ghost"
-                  className="h-9 shrink-0 rounded-xl px-3 text-sm text-zinc-600 hover:bg-rose-50"
+                  size="icon"
+                  className="h-9 w-9 shrink-0 rounded-xl text-zinc-600 hover:bg-rose-50"
                   onClick={exportVisibleItemsToCsv}
+                  title="Export"
+                  aria-label="Export"
                 >
-                  <Download className="mr-2 h-4 w-4" />
-                  Export
+                  <Download className="h-4 w-4" />
                 </Button>
               </div>
             </div>
